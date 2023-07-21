@@ -1,0 +1,4098 @@
+---
+title: Beautiful Makie
+author: Youtube
+execute:
+  keep-ipynb: true
+format:
+    html:
+        code-fold: true
+        code-tools: true
+        toc: true
+jupyter: julia-1.8
+---
+
+# Data visualization in Julia with the Makie ecosystem
+
+[Julia Manual](https://sje30.github.io/catam-julia/intro/julia-manual.html)
+
+[Data visualization in Julia with the Makie ecosystem](https://www.youtube.com/watch?v=nmAv2bW9Y2I)
+
+[100daysOfMakie](https://github.com/lazarusA/100daysOfMakie)
+
+
+```{julia}
+#import Pkg; Pkg.add("TimeSeries")
+using AlgebraOfGraphics,AssociatedLegendrePolynomials,CairoMakie,Cascadia,Chain,Colors,ColorSchemes,CSV,DataFrames,DataFramesMeta,Dates,Distributions,Downloads
+```
+
+```{julia}
+using FileIO,ForwardDiff,GeoMakie,GeoJSON,GeometryBasics,GitHub,GLM,GLMakie,Gumbo,HTTP,Images,Interpolations,LaTeXStrings,Lazy,LinearAlgebra,Makie,MarketData,Meshes
+```
+
+```{julia}
+using OnlineStats,PalmerPenguins,Pipe,Random,RDatasets,SpecialFunctions,StatsBase,TestImages,TimeSeries
+```
+
+```{julia}
+#import Pkg; Pkg.add("Lazy")
+wd = "D:/Julia/Julia_Plots/Julia Makie/"
+```
+
+# Beautiful Makie
+
+[Webpage](https://beautiful.makie.org/)
+
+# 2D
+
+## Lines
+
+### Single line
+
+```{julia}
+let
+	x = collect(1:10)
+	GLMakie.lines(x, x .^ 2; 
+		color = :black, linewidth = 2, 
+		linestyle = :dashdot, label = L"x^2",
+	    figure = (resolution = (600, 400), 
+		backgroundcolor = "#a5b4b5",
+		fonts = (; regular = "CMU Serif")),
+	    axis = (xlabel = L"x", ylabel = L"x^2", backgroundcolor = :white,
+	        xlabelsize = 22, ylabelsize = 22))
+	GLMakie.axislegend("legend", position = :lt)
+	# Makie.limits!(0, 10, 0, 100)
+	Makie.current_figure()
+end
+```
+
+### Two lines
+
+```{julia}
+let
+	x = -2π:0.1:2π
+	GLMakie.lines(x, sin.(x); color = "#56B4E9", linewidth = 2, label = L"sin",
+	    axis = (xlabel = L"x", ylabel = L"f(x)", xgridcolor = :red,
+	        xlabelsize = 22, ylabelsize = 22,
+	        xgridstyle = :dashdot, xgridwidth = 0.85,
+	        xtickalign = 1, xticksize = 20),
+	    figure = (resolution = (600, 400), fonts = (; regular= "CMU Serif")))
+	
+	GLMakie.lines!(x, cos.(x); color = :black, linestyle = :dash, label = L"cos")
+	# limits!(-2π, 2π, -1, 1)
+	GLMakie.axislegend("Legend", position = :lb);
+	Makie.current_figure()
+end
+```
+
+### Twin Axis
+
+```{julia}
+let
+	fig = GLMakie.Figure(resolution = (600, 400))
+	ax1 = GLMakie.Axis(fig[1, 1], yticklabelcolor = :black, rightspinevisible = false)
+	ax2 = GLMakie.Axis(fig[1, 1], yaxisposition = :right,
+	    yticklabelcolor = :dodgerblue,
+	    rightspinecolor = :dodgerblue,
+	    ytickcolor = :dodgerblue)
+	GLMakie.lines!(ax1, 0 .. 10, x -> x; color = :black)
+	GLMakie.lines!(ax2, 0 .. 10, x -> exp(-x); color = :dodgerblue)
+	# GLMakie.hidespines!(ax2, :l, :b, :t)
+	# GLMakie.hidexdecorations!(ax2);
+	save("C:/IE/Julia/Plots/fig_002.png", fig)
+end
+```
+
+### Lines Colorbar
+
+```{julia}
+let
+	x = LinRange(0, 2π, 100)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x")
+	obj = lines!(x, sin.(x); color = x, colormap = :viridis, linewidth = 5)
+	lines!(x, cos.(x), color = :black, label = "cos(x)", linewidth = 1)
+	lines!(x, -cos.(x), color = :dodgerblue, label = "-cos(x)")
+	axislegend(ax)
+	Colorbar(fig[1, 2], obj, label = "sin(x)")
+	colgap!(fig.layout, 5)
+	fig
+end
+```
+
+### Lines with Different Colorbars
+
+```{julia}
+let
+	x = LinRange(0, 2π, 50)
+	fig = Figure(resolution = (800, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = L"x", xlabelsize = 22)
+	line1 = lines!(x, sin.(x); color = x, colormap = :thermal, linewidth = 4)
+	line2 = lines!(x, cos.(x); color = sqrt.(x), colormap = :ice, linewidth = 4)
+	line3 = lines!(x, -sin.(x); color = x .^ 2, colormap = :viridis, linewidth = 4)
+	line4 = lines!(x, -cos.(x); color = x / 2, colormap = :plasma, linewidth = 4)
+	lineas = [line1, line2, line3, line4]
+	labels = [L"x", L"\sqrt{x}", L"x^{2}", L"x/2"]
+	cbars = [Colorbar(fig[1, i+1], lineas[i], label = labels[i], labelsize = 22)
+	            for i in 1:4]
+	colgap!(fig.layout, 5)
+	fig
+end
+```
+
+### Lines with Colorbars around
+
+```{julia}
+let
+	x = LinRange(0, 2π, 50)
+	fig = Figure(resolution = (800, 600), fontsize = 22)
+	ax = Makie.Axis(fig, xlabel = L"x", ylabel = L"y")
+	line1 = lines!(x, sin.(x), color = x, colormap = :thermal, linewidth = 4)
+	line2 = lines!(x, cos.(x), color = sqrt.(x), colormap = :ice, linewidth = 4)
+	line3 = lines!(x, -sin.(x), color = x .^ 2, colormap = :viridis, linewidth = 4)
+	line4 = lines!(x, -cos.(x), color = x / 2, colormap = :plasma, linewidth = 4)
+	labels = [L"x", L"\sqrt{x}", L"x^{2}", L"x/2"]
+	cbar1 = Colorbar(fig, line1, label = labels[1], width = 10, ticksize = 5)
+	cbar2 = Colorbar(fig, line2, label = labels[2], flipaxis = false,
+	    height = Relative(3.5 / 4), width = 10, ticksize = 10)
+	cbar3 = Colorbar(fig, line3, label = labels[3], vertical = false, ticksize = 10,
+	    tickalign = 0, flipaxis = false, width = Relative(4 / 4), height = 10,
+	    tickcolor = :red)
+	cbar4 = Colorbar(fig, line4, label = labels[4], vertical = false,
+	    width = Relative(3 / 4), height = 10, ticksize = 10, tickalign = 1)
+	fig[1, 2] = cbar4
+	fig[2, 1] = cbar2
+	fig[2, 2] = ax
+	fig[2, 3] = cbar1
+	fig[3, 2] = cbar3
+	colgap!(fig.layout, 5)
+	rowgap!(fig.layout, 5)
+	fig
+end
+```
+
+### Colored lines
+
+```{julia}
+let
+	xs = 0:0.01:1
+	p = -10:1:10
+	p = filter(x -> x != 0, collect(p))
+	psize = length(p)
+	ys = zeros(length(xs), psize)
+	for (indx, i) in enumerate(p)
+	    if i <= -1
+	        ys[:, indx] = xs .^ (1 / abs(i))
+	    elseif i >= 1
+	        ys[:, indx] = xs .^ i
+	    end
+	end
+	cbarPal = :thermal
+	cmap = cgrad(colorschemes[cbarPal], psize, categorical = true)
+	fig = Figure(resolution = (600, 400), fonts = (; regular= "CMU Serif"))
+	ax = Makie.Axis(fig[1, 1], aspect = 1, xlabel = L"x", ylabel = L"x^{p}",
+	    xlabelsize = 22, ylabelsize = 22)
+	[lines!(xs, ys[:, v], color = cmap[v], label = "$(p[v])") for v in 1:psize]
+	Legend(fig[1, 2], ax, nbanks = 2, label = L"p")
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+### Colored line Colorbar
+
+```{julia}
+let
+	xs = 0:0.01:1
+	p = -10:1:10
+	p = filter(x -> x != 0, collect(p))
+	psize = length(p)
+	ys = zeros(length(xs), psize)
+	for (indx, i) in enumerate(p)
+	    if i <= -1
+	        ys[:, indx] = xs .^ (1 / abs(i))
+	    elseif i >= 1
+	        ys[:, indx] = xs .^ i
+	    end
+	end
+	cbarPal = :thermal
+	cmap = cgrad(colorschemes[cbarPal], psize, categorical = true)
+	fig = Figure(resolution = (600, 400), fonts = (; regular= "CMU Serif"))
+	ax = Makie.Axis(fig[1, 1], xlabel = L"x", ylabel = L"x^{p}",
+	    xlabelsize = 22, ylabelsize = 22)
+	[lines!(xs, ys[:, v], color = cmap[v]) for v in 1:psize]
+	Colorbar(fig[1, 2], limits = (-10, 10), nsteps = psize, colormap = cmap,
+	    label = L"p", ticksize = 20, width = 20, tickalign = 1)
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+### Inset
+
+```{julia}
+let
+	Random.seed!(123)
+	x = -3:0.05:3
+	y = exp.(-x .^ 2)
+	n = 15
+	y[1:n] = y[1:n] .+ 0.02 * randn(n)
+	fig = Figure(resolution = (600, 400))
+	ax1 = Makie.Axis(fig[1, 1], xlabel = "x", ylabel = "f(x)", xgridvisible = true,
+	    ygridvisible = true)
+	lines!(ax1, x, y, color = :red, label = "f(x)")
+	axislegend()
+	# inset
+	ax2 = Makie.Axis(fig, bbox = BBox(140, 250, 200, 300), xticklabelsize = 12,
+	    yticklabelsize = 12, title = "inset  at (140, 250, 200, 300)")
+	lines!(ax2, x, y, color = :red)
+	limits!(ax2, -3.1, -1.9, -0.05, 0.05)
+	ax2.yticks = [-0.05, 0, 0.05]
+	ax2.xticks = [-3, -2.5, -2]
+	translate!(ax2.scene, 0, 0, 10);
+	current_figure()
+end
+```
+
+### Inset heatmap
+
+```{julia}
+let
+	x = y = -10:0.11:10
+	y1d = sin.(x) ./ x
+	# 3D heatmap
+	sinc2d(x, y) = sin.(sqrt.(x .^ 2 + y .^ 2)) ./ sqrt.(x .^ 2 + y .^ 2)
+	fxy = [sinc2d(x, y) for x in x, y in y]
+	
+	fig = Figure(resolution = (600, 400))
+	ax1 = Makie.Axis(fig[1, 1], xlabel = "x", ylabel = "f(x)", xgridvisible = true,
+	    ygridvisible = true)
+	lines!(ax1, x, y1d, color = :red, label = "sinc(x)")
+	axislegend()
+	# inset
+	ax2 = Makie.Axis(fig, bbox = BBox(140, 260, 260, 350), xticklabelsize = 12,
+	    yticklabelsize = 12, title = "inset  at (140, 260, 260, 350)")
+	hmap = heatmap!(ax2, x, y, fxy, colormap = :Spectral_11)
+	Colorbar(fig[1, 1], hmap, label = "sinc(x,y)", labelpadding = 5,
+	    tellheight = false, tellwidth = false, ticklabelsize = 12,
+	    width = 10, height = Relative(1.5 / 4),
+	    halign = :right, valign = :center)
+	limits!(ax2, -10, 10, -10, 10)
+	hidespines!(ax2)
+	ax2.yticks = [-10, 0, 10]
+	ax2.xticks = [-10, 0, 10]
+	fig
+end
+```
+
+### LaTeX
+
+```{julia}
+#=let
+	x = 0:0.05:4π
+	fig = Figure(resolution = (600, 400), fonts = (; regular= "CMU Serif")) ## probably you need to install this font in your system
+	ax = Makie.Axis(fig[1, 1], xlabel = L"x", ylabel = L"f (x)", ylabelsize = 22,
+	    xlabelsize = 22, xgridstyle = :dash, ygridstyle = :dash, xtickalign = 1,
+	    xticksize = 10, ytickalign = 1, yticksize = 10, xlabelpadding = -10)
+	lines!(x, x -> sin(3x) / (cos(x) + 2) / x; label = L"\frac{\sin(3x)}{x(\cos(x) + 2)}")
+	lines!(x, x -> cos(x) / x; label = L"\cos(x)/x")
+	lines!(x, x -> exp(-x); label = L"e^{-x}")
+	ylims!(-0.6, 1.05)
+	xlims!(-0.5, 12)
+	axislegend(L"f(x)"; position = :rt, bgcolor = (:grey90, 0.25));
+	fig
+end=#
+```
+
+### Bessel 1st
+
+```{julia}
+#=let
+	x = 0:0.1:15
+	fig = Figure(resolution = (600, 400), fonts =(; regular= "CMU Serif"))
+	ax = Makie.Axis(fig[1, 1], xlabel = L"x", ylabel = L"J_{\nu}(x)", ylabelsize = 22,
+	    xlabelsize = 22, xgridstyle = :dash, ygridstyle = :dash, xtickalign = 1,
+	    xticksize = 10, ytickalign = 1, yticksize = 10, xlabelpadding = -10)
+	for ν in 0:6
+	    lines!(ax, x, besselj.(ν, x), label = latexstring("J_{$(ν)}(x)"))
+	end
+	axislegend(; nbanks = 3, framecolor = (:grey, 0.5));
+	current_figure()
+end=#
+```
+
+### Bessel 2nd
+
+```{julia}
+#=let
+	x = 0.1:0.1:15
+	cycle = Cycle([:color, :linestyle, :marker], covary = true)
+	set_theme!(Lines = (cycle = cycle,), Scatter = (cycle = cycle,))
+	fig = Figure(resolution = (600, 400), fonts = (; regular="CMU Serif")) ## probably you need to install this font in your system
+	ax = Makie.Axis(fig[1, 1], xlabel = L"x", ylabel = L"Y_{\nu}(x)", ylabelsize = 22,
+	    xlabelsize = 22, xgridstyle = :dash, ygridstyle = :dash, xtickalign = 1,
+	    xticksize = 10, ytickalign = 1, yticksize = 10, xlabelpadding = -10)
+	for ν in 0:4
+	    lines!(ax, x, bessely.(ν, x), label = latexstring("Y_{$(ν)}(x)"), linewidth = 2)
+	end
+	axislegend(; position = :rb, nbanks = 2, framecolor = (:grey, 0.5))
+	ylims!(-1.8, 0.7)
+	fig
+end=#
+```
+
+### Time Series
+
+```{julia}
+let
+	# dummy data
+	dates = Date(2018, 1, 1):Day(1):Date(2018, 12, 31)
+	ta = TimeArray(dates, rand(length(dates)))
+	vals = 0.5 * values(ta)
+	tempo = string.(timestamp(ta))
+	lentime = length(tempo)
+	slice_dates = range(1, lentime, step=lentime ÷ 8)
+	
+	fig = Figure(resolution=(600, 400), fonts=(;regular = "sans"))
+	ax = Makie.Axis(fig[1, 1], xlabel="Date", ylabel="value")
+	line1 = lines!(ax, 1:lentime, vals; color=:black, linewidth=0.85)
+	ax.xticks = (slice_dates, tempo[slice_dates])
+	ax.xticklabelrotation = π / 4
+	ax.xticklabelalign = (:right, :center)
+	fig
+end
+```
+
+### x log
+
+```{julia}
+let
+	x = LinRange(0.01, 30π, 2000)
+	y = sin.(x)
+	lines(x, y; color = :black, figure = (resolution = (600, 400),),
+	    axis = (xscale = log10, xlabel = "x", ylabel = "y", xgridstyle = :dash,
+	        ygridstyle = :dash, xminorticksvisible = true,
+	        xminorticks = IntervalsBetween(9))) ## possible issue with log-ticks
+	ylims!(-1, 1)
+	current_figure()
+end
+```
+
+### y log
+
+```{julia}
+let
+	x = LinRange(0.01, 30π, 2000)
+	y = cos.(x)
+	lines(y, x; color=:orangered, figure=(resolution=(600, 400),),
+	    axis=(yscale=log10, xlabel="x", ylabel="y", xgridstyle=:dash,
+	        ygridstyle=:dash, yminorticksvisible=true,
+	        yminorticks=IntervalsBetween(9))) ## possible issue with log-ticks
+	xlims!(-1, 1)
+	current_figure()
+end
+```
+
+### xy log
+
+```{julia}
+let
+	Random.seed!(123)
+	x = 0.001:0.05:10
+	y = x .^ 2 .+ abs.(2 * randn(length(x)))
+	lines(x, y, color=:navy, figure=(resolution=(600, 400),),
+	    axis=(xscale=log10, yscale=log10, xlabel="x", ylabel="y",
+	        xgridstyle=:dash, ygridstyle=:dash, xminorticksvisible=true,
+	        xminorticks=IntervalsBetween(9), yminorticksvisible=true,
+	        yminorticks=IntervalsBetween(9)))
+	current_figure()
+end
+```
+
+## Scatters
+
+### Scatter
+
+```{julia}
+let
+	Random.seed!(1234)
+	d = Distributions.Normal()
+	b = Binomial(15, 0.7)
+	n = 350
+	scatter(rand(d,n), rand(b, n);
+	    markersize = 12*abs.(rand(d, n)),
+	    color = tuple.(:orangered, rand(n)),
+	    strokewidth = 0.5,
+	    strokecolor = :white,
+	    axis = (;
+	        xlabel = "x", ylabel = "y"),
+	    figure = (;
+	        resolution = (600,400))
+	    );
+end
+```
+
+### Scatters with Colormaps
+
+```{julia}
+let
+	Random.seed!(123)
+	n = 50
+	x, y, color = rand(n), rand(n), rand(n)
+	cmaps = [:cool, :viridis, :plasma, :inferno, :thermal,
+	    :leonardo, :winter, :spring, :ice]
+	markers = [:+, :diamond, :star4, :rtriangle, :rect,
+	    :circle, :pentagon, :cross, :star5]
+	
+	function FigGridScatters()
+	    fig = Figure(resolution = (1200, 800))
+	    c = 1
+	    for i in 1:2, j in 1:2:5
+	        ax = Makie.Axis(fig[i, j], aspect = AxisAspect(1))
+	        pnts = scatter!(x, y .^ c; color = color, colormap = cmaps[c],
+	            markersize = 15, marker = markers[c], strokewidth = 0)
+	        cbar = Colorbar(fig, pnts, height = Relative(0.75), tickwidth = 2,
+	            tickalign = 1, width = 14, ticksize = 14)
+	        fig[i, j+1] = cbar
+	        limits!(ax, -0.1, 1.1, -0.1, 1.1)
+	        ax.xticks = [0, 1]
+	        ax.yticks = [0, 1]
+	        ax.xticklabelsize = 20
+	        ax.yticklabelsize = 20
+	        c += 1
+	    end
+	    fig
+	end
+	fig = FigGridScatters()
+end
+```
+
+### Bubble plot
+
+```{julia}
+let
+	Random.seed!(124)
+	n = 30
+	x, y, z = randn(n), randn(n), randn(n)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1]; xgridstyle = :dashdot, ygridstyle = :dashdot,
+	    xtickalign = 1, ytickalign = 1)
+	pts1 = scatter!(ax, 10x, y; color = z, colormap = (:viridis, 0.75),
+	    markersize = 20z, marker = :rect)
+	pts2 = scatter!(ax, 3x, 5y; color = z, colormap = (:thermal, 0.85),
+	    markersize = 45z)
+	
+	Colorbar(fig[1, 2], pts1, label = "z1 value", ticklabelsize = 14,
+	    labelpadding = 5, width = 10)
+	Colorbar(fig[1, 3], pts2, label = "z2 value", ticklabelsize = 14,
+	    labelpadding = 5, width = 10)
+	fig
+end
+```
+
+### Bubble plot logxy
+
+```{julia}
+let
+	Random.seed!(123)
+	x = 10 .^ (range(-1, stop=1, length=100))
+	y = x .^ 2 .+ abs.(2 * randn(length(x)))
+	cmap = cgrad(:viridis, scale=:log, alpha=0.5)
+	
+	fig, ax, pltpbj = scatter(x, y; markersize=(x .^ 2/3)[end:-1:1] .+ 6,
+	    color=x, colormap=cmap,
+	    figure=(;
+	        resolution=(600, 400),
+	        fonts=(;regular="CMU Serif")),
+	    axis=(;
+	        xscale=log10,
+	        yscale=log10,
+	        xlabel="x", ylabel="y",
+	        xgridstyle=:dash,
+	        ygridstyle=:dash,
+	        xminorticksvisible=true,
+	        yminorticksvisible=true,
+	        xminorticks=IntervalsBetween(9),
+	        yminorticks=IntervalsBetween(9)))
+	Colorbar(fig[1, 2], pltpbj)
+	ylims!(ax, 1e-1, 1e2)
+	fig
+end
+```
+
+### Iris dataset
+
+```{julia}
+let
+	Random.seed!(123)
+	dset = dataset("datasets", "iris")
+	byCat = dset.Species
+	categ = unique(byCat)
+	markers = [:circle, :diamond, :utriangle]
+	
+	fig = Figure(resolution=(600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel="Sepal Length", ylabel="Sepal Width")
+	for (idx, c) in enumerate(categ)
+	    indices = findall(x -> x == c, byCat)
+	    scatter!(dset.SepalLength[indices], dset.SepalWidth[indices];
+	        marker=markers[idx], #color = rand(RGBf),
+	        markersize=15, label="$(c)")
+	end
+	axislegend("Species")
+	fig
+end
+```
+
+### Makie Contributors
+
+```{julia}
+#=let
+	function getavatars(; n = 90)
+	    contri = GitHub.contributors("JuliaPlots/Makie.jl")[1]
+	    avatars = []
+	    contributions = []
+	    for i in eachindex(contri)
+	        push!(avatars, contri[i]["contributor"].avatar_url.uri)
+	        push!(contributions, contri[i]["contributions"])
+	    end
+	    p = sortperm(contributions, rev=true)
+	    imgs = []
+	    for i in p[1:n]
+	        img_d = Downloads.download(avatars[i])
+	        push!(imgs, load(img_d))
+	    end
+	    return imgs
+	end
+	avatars = getavatars()
+	
+	function plotcontributors(avatars)
+	    fig = Figure(; resolution = (1200,600))
+	    ax = Makie.Axis(fig[1,1], aspect = DataAspect())
+	    k = 1
+	    for i in 6:-1:1, j in 1:15
+	        scatter!(ax, Point2f(j,i);
+	            marker = #Circle,
+	            image = avatars[k],
+	            markersize = 70)
+	        k += 1
+	    end
+	    hidedecorations!.(ax)
+	    hidespines!.(ax)
+	    limits!(ax, 0, 16, 0, 7)
+	    fig
+	end
+	
+	fig = plotcontributors(avatars)
+end=#
+```
+
+## Scattersline
+
+### Sine
+
+```{julia}
+let
+	x = LinRange(0, 2π, 50)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x", ylabel = "")
+	scatterlines!(x, sin.(x);
+	    color = :black,
+	    markersize = 10,
+	    label = "sin(x)")
+	axislegend()
+	fig
+end
+```
+
+### Spirals
+
+```{julia}
+let
+	n = 50
+	t = range(0, 5*π, n)
+	x(t; a = 0.0, b = -2.4) = (a + b*t) * cos(t)
+	y(t; a = 0.0, b = -2.4) = (a + b*t) * sin(t)
+	
+	fig = Figure(resolution = (600,400))
+	ax = Makie.Axis(fig[1,1]; aspect = DataAspect(), xlabel = "x", ylabel = "y")
+	for (k,i) in enumerate(-4:-2)
+	    scatterlines!(x.(t; b = i), y.(t; b = i))
+	end
+	fig
+end
+```
+
+### Markers
+
+```{julia}
+let
+	x = LinRange(0, 2π, 50)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x")
+	scatterlines!(x, sin.(x), color = :black, label = "sin(x)",
+	    marker = '◆', markersize = 10)
+	scatterlines!(x, cos.(x), color = :black, label = "cos(x)",
+	    marker = '■', markercolor = :red, markersize = 10,
+	    strokewidth = 1, strokecolor = :red)
+	axislegend(; position = :cc)
+	fig
+end
+```
+
+### Scatterlines and lines
+
+```{julia}
+let
+	x = LinRange(0, 2π, 50)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x")
+	lines!(x, sin.(x); color = :red, label = "sin(x)")
+	scatterlines!(x, cos.(x); color = :blue, label = "cos(x)", markercolor = :black,
+	    markersize = 10)
+	scatter!(x, -cos.(x); color = :red, label = "-cos(x)", strokewidth = 1,
+	    strokecolor = :red, markersize = 5, marker = '■')
+	axislegend(; position = :lt, bgcolor = (:white, 0.85), framecolor = :green);
+	fig
+end
+```
+
+### Scatterlines and lines: Legend out
+
+```{julia}
+let
+	x = LinRange(0, 2π, 50)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x")
+	lines!(x, sin.(x), color = :red, label = "sin(x)")
+	scatterlines!(x, cos.(x), color = :blue, label = "cos(x)", markersize = 5)
+	scatter!(x, -cos.(x), color = :red, label = "-cos(x)", strokewidth = 1,
+	    strokecolor = :red, markersize = 5, marker = '■')
+	Legend(fig[1, 2], ax, merge = true)
+	fig
+end
+```
+
+## Linesegments
+
+### Linesegments
+
+```{julia}
+#=let
+	Random.seed!(1234)
+	b = Binomial(10, 0.85)
+	n = 500
+	function someSegments(; n = 50)
+	    Point2f.(vec([[x, rand(b)] for i in 1:2, x = rand(n)]))
+	end
+	linesegments(someSegments(; n = n);
+	    color = rand(n),
+	    colormap = :Spectral_11, linewidth = abs.(randn(n)),
+	    axis = (; xlabel = "x", ylabel = "y"),
+	    figure = (; resolution = (600,400))
+	    );
+end=#
+```
+
+### RRGraph
+
+```{julia}
+#=let
+	function RRGAdjacencyM(; lengthBase=1, radius=0.1, nodes=500, rseed=123)
+	    Random.seed!(rseed)
+	    xy = rand(nodes, 2)
+	    x = lengthBase .* xy[:, 1]
+	    y = xy[:, 2] ./ lengthBase
+	    matrixAdjDiag = Diagonal(√2 * randn(nodes))
+	    matrixAdj = zeros(nodes, nodes)
+	    for point in 1:nodes-1
+	        distance = sqrt.((x[point+1:end] .- x[point]) .^ 2 .+ (y[point+1:end] .- y[point]) .^ 2)
+	        dindx = findall(distance .<= radius) .+ point
+	        if length(dindx) > 0
+	            rnd = randn(length(dindx))
+	            matrixAdj[point, dindx] = rnd
+	            matrixAdj[dindx, point] = rnd
+	        end
+	    end
+	    return (matrixAdj .+ matrixAdjDiag, x, y)
+	end
+	adjacencyM, x, y = RRGAdjacencyM()
+	
+	function getGraphEdges(adjMatrix, x, y)
+	    xyos = []
+	    weights = []
+	    for i in eachindex(x), j in i+1:length(x)
+	        if adjMatrix[i, j] != 0.0
+	            push!(xyos, [x[i], y[i]])
+	            push!(xyos, [x[j], y[j]])
+	            push!(weights, adjMatrix[i, j])
+	            push!(weights, adjMatrix[i, j])
+	        end
+	    end
+	    return (Point2f.(xyos), Float32.(weights))
+	end
+	
+	function plotGraph(adjacencyM, x, y)
+	    cmap = (:Spectral_11, 0.75)
+	    adjmin = minimum(adjacencyM)
+	    adjmax = maximum(adjacencyM)
+	    diagValues = diag(adjacencyM)
+	    segm, weights = getGraphEdges(adjacencyM, x, y)
+	
+	    fig, ax, pltobj = linesegments(segm; color=weights, colormap=cmap,
+	        linewidth=abs.(weights) / 2, colorrange=(adjmin, adjmax),
+	        figure=(; resolution=(800, 600)),
+	        axis=(; aspect=DataAspect()))
+	    scatter!(ax, x, y; color=diagValues, markersize=3 * abs.(diagValues),
+	        colorrange=(adjmin, adjmax), colormap=cmap)
+	    limits!(ax, -0.02, 1.02, -0.02, 1.02)
+	    Colorbar(fig[1, 2], pltobj, label="weights")
+	    colsize!(fig.layout, 1, Aspect(1, 1.0))
+	    fig
+	end
+	rrgraph = with_theme(theme_black()) do
+	    plotGraph(adjacencyM, x, y)
+	end
+end=#
+```
+
+## Series
+
+```{julia}
+#=let
+	Random.seed!(123)
+	m = 200
+	function spiral(; a = 1, n = 100, h = 0, k = 0)
+	    φ = LinRange(rand() + 1, 6π, n)
+	    h .+  rand(-1:2:1)*a*cos.(φ)./φ, k .+  rand(-1:2:1)*a*sin.(φ)./φ
+	end
+	x = raw"x=a\,\cos(\varphi)/\varphi,\quad "
+	y = raw"y=a\,\sin(\varphi)/\varphi,\quad "
+	curves = [spiral(; a = rand(), h = rand(-1:1)) for i in 1:m]
+	
+	fig = Figure(resolution = (600,400))
+	ax = Makie.Axis(fig[1,1])
+	series!(curves; color = GLMakie.resample_cmap(:bone_1, m), linewidth = 1.5)
+	text!(latexstring(x * y * "\\varphi>0"), position = (-1,-1))
+	hidedecorations!(ax; grid = false)
+	fig
+end=#
+```
+
+## Stairs
+
+```{julia}
+#=let
+	p(s, β) = (β + 1)*a(β) * s^β * exp(-a(β)*s^(β+1))
+	a(β) = gamma(((β + 2)/(β + 1))^(β + 1))
+	s = LinRange(0,3,30)
+	colors = ["#FF410D", "#6EE2FF", "#F7C530", "#95CC5E", "#D0DFE6", "#F79D1E"]
+	
+	fig = Figure(resolution = (600,400))
+	ax = Makie.Axis(fig[1,1]; palette = (; color = colors))
+	for β in [0,1], step in [:pre, :center, :post]
+	    #CairoMakie.stairs!(s, p.(s, β), step = step, label = "$(β), :$(step)")
+	    Makie.stairs!(s, p.(s, β), step = step, label = "$(β), :$(step)")
+	end
+	lines!(s, p.(s, 1), color = :grey30)
+	lines!(s, p.(s, 0), color = :grey10)
+	text!(L"p(s)=(\beta+1)a_{\beta}\,s^{\beta}\exp(-a_{\beta}s^{\beta+1})",
+	    position = (0.7, 0.95), color = :black)
+	text!(L"a_{\beta} = \Gamma[(\beta+2)/(\beta+1)]^{\beta + 1}",
+	    position = (1.7, 0.25), color = :black)
+	axislegend("β, step", position = :rt);
+	fig
+end=#
+```
+
+```{julia}
+#=using Makie
+function stairpts(s)
+    pts = s.plots[1].converted[1][]
+    [p[1] for p in pts], [p[2] for p in pts]
+end
+
+xs = rand(1000)
+ys = rand(1000)
+s = stairs!(xs, ys, step=:post)
+
+xsp, ysp = stairpts(s)
+band!(xsp, 0*ysp, ysp, color=(s.color, 0.25)) # 0.25 alpha=#
+```
+
+## Stem
+
+```{julia}
+#=let
+	Random.seed!(2)
+	t = 0.3:0.3:3π
+	my_markers = [:circle, :rect, :utriangle, :dtriangle, :diamond, :pentagon,
+	    :cross, :xcross]
+	
+	fig, ax, = stem(t, 1.5exp.(-t/5).*cos.(t); color = 1:length(t),
+	    colormap = :linear_wyor_100_45_c55_n256, stemcolor = 1:length(t),
+	    stemcolormap = :linear_wcmr_100_45_c42_n256,
+	    figure = (; resolution = (600,400)))
+	stem!(t .+ 0.15, -cos.(t) ./ t .+ 0.25; color = :transparent,
+	    stemwidth = 0.5, marker = :rect, markersize = 10, strokewidth = 1,
+	    strokecolor = :black)
+	stem!(1:8, 1.5randn(8); marker = my_markers,
+	    color = tuple.(GLMakie.resample_cmap(:mk_12, 8), 0.65), stemlinestyle = :dash,
+	    stemcolor = GLMakie.resample_cmap(:mk_12, 8), markersize = 15*rand(8) .+ 10,
+	    strokewidth = 1.5, strokecolor = GLMakie.resample_cmap(:mk_12, 8))
+	hidedecorations!(ax; grid = false)
+	fig
+end=#
+```
+
+## Contour
+
+### Egg Shape
+
+```{julia}
+let
+	x = -1:0.02:1
+	y = -1.5:0.02:2
+	egg(x, y) = x^2 + y^2 / (1.4 + y / 5)^2
+	segg = [egg(x, y) for x in x, y in y]
+	
+	fig = Figure(resolution=(600, 400))
+	ax = Makie.Axis(fig[1, 1], aspect=DataAspect(), xlabel="x", ylabel="y",
+	    xgridstyle=:dash, ygridstyle=:dash,
+	    xgridcolor=:grey, ygridcolor=:grey)
+	cl = contour!(x, y, segg;
+	    linewidth=0.85,
+	    colormap=:Spectral_11,
+	    levels=0:0.02:1
+	    )
+	# colsize!(fig.layout, 1, Aspect(1, 0.6))
+	fig
+end
+```
+
+### Contour over heatmap
+
+```{julia}
+let
+	f(x, y) = (x + 2y^2) * abs(sin(y) + cos(x))
+	x = y = 1:0.2:20
+	z = [f(x, y) for x in x, y in y]
+	
+	fig = Figure(resolution=(1200, 400), fontsize=22)
+	axs = [Makie.Axis(fig[1, j], aspect=1, xlabel="x", ylabel=j == 1 ? "y" : "")
+	        for j in 1:3]
+	p1 = heatmap!(axs[1], x, y, z, colormap=:plasma)
+	contour!(axs[2], x, y, z; color=:black, levels=100:1:101)
+	heatmap!(axs[3], x, y, z; colormap=(:plasma, 0.5))
+	contour!(axs[3], x, y, z; color=:white, levels=100:1:101)
+	Colorbar(fig[1, 4], p1, width=20, ticksize=20, tickalign=1)
+	[limits!(axs[i], 1, 20, 1, 20) for i in 1:3]
+	[hideydecorations!(axs[i], grid=false, ticks=false) for i in 2:3]
+	fig
+end
+```
+
+### Qubit
+
+```{julia}
+let
+	function tα_qubit(β, ψ1, ψ2, fα, f)
+	    2 + 2 * β - cos(ψ1) - cos(ψ2) - 2 * β * cos(π * fα) * cos(2 * π * f + π * fα - ψ1 - ψ2)
+	end
+	ψ1 = ψ2 = range(0, 4 * π, length=100)
+	z = [tα_qubit(0.61, x, y, 0.2, 0.1) for x in ψ1, y in ψ2]
+	
+	fig = Figure(resolution=(600, 400))
+	ax = Makie.Axis(fig[1, 1], aspect=1, xlabel="ψ1", ylabel="ψ2")
+	cls = contour!(ψ1, ψ2, z; colormap=:plasma, levels=20, linewidth=1.5)
+	# Colorbar(fig[1, 2], cls, label="α-q")
+	limits!(ax, 0, 4π, 0, 4π)
+	# colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+### Complex function
+
+```{julia}
+let
+	x = -2:0.005:2
+	y = -2:0.005:2
+	f(z) = (z^3 - 3) / z
+	fvals = [f(u + 1im * v) for u in x, v in y]
+	fvalues = abs.(fvals)
+	fargs = angle.(fvals)
+	
+	fig = Figure(resolution=(900, 400), fontsize=20)
+	axs = [Makie.Axis(fig[1, j], aspect=1) for j in 1:2]
+	cmap = :roma
+	contour!(axs[1], x, y, fargs, levels=30, colormap=cmap)
+	pltobj1 = heatmap!(axs[2], x, y, fargs, colorrange=(-π, π), colormap=cmap)
+	contour!(axs[2], x, y, fargs, levels=30, color=:white, linewidth=0.85)
+	Colorbar(fig[1, 3], pltobj1, ticks=([-π, -π / 2, 0, π / 2, π],
+	    ["-π", "-π/2", "0", "π/2", "π"]))
+	limits!(axs[1], -2, 2, -2, 2)
+	fig
+end
+```
+
+## Arrows
+
+```{julia}
+let
+	xs = LinRange(-3, 3, 20)
+	ys = LinRange(-3, 3, 20)
+	us = [x + y for x in xs, y in ys]
+	vs = [y - x for x in xs, y in ys]
+	strength = vec(sqrt.(us .^2 .+ vs .^2))
+	cmap = :gnuplot
+	
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1,1], xlabel = "x", ylabel = "y", aspect = DataAspect())
+	arrows!(ax, xs, ys, us, vs, arrowsize = 10, lengthscale = 0.1,
+	    arrowcolor = strength, linecolor = strength, colormap = cmap)
+	Colorbar(fig[1,2], limits =(minimum(strength), maximum(strength)),
+	    nsteps =100, colormap = cmap, ticksize=15, width = 15, tickalign=1)
+	limits!(ax, -3,3,-3,3)
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+## Steamplot
+
+### Field lines: Electric charges
+
+```{julia}
+let
+	function E(q, rx, ry, x, y)
+	    d = sqrt((x-rx)^2 + (y-ry)^2)^3
+	    return (q * (x - rx) / d, q * (y - ry) / d)
+	end
+	function charges(; nq = 2)
+	    qs = []
+	    for i in 1:nq
+	        q = i % 2 * 2 - 1
+	        push!(qs, (q, cos(2π * i / nq), sin(2π * i / nq)))
+	    end
+	    qs
+	end
+	function fieldE(x,y)
+	    Ex, Ey = 0, 0
+	    for q in qs
+	        ex, ey = E(q..., x, y)
+	        Ex += ex
+	        Ey += ey
+	    end
+	    Makie.Point(Ex, Ey)
+	end
+	
+	fig = Figure(resolution = (600,400))
+	ax1 = Makie.Axis(fig[1,1]; aspect = DataAspect())
+	ax2 = Makie.Axis(fig[1,2]; aspect = DataAspect())
+	
+	qs = charges()
+	streamplot!(ax1, fieldE, -2..2, -2..2; arrow_size = 6, linewidth = 0.5,
+	    colorrange = (-3,3), colormap = ([:black, :black, :orange, :red]))
+	[scatter!(ax1, Makie.Point(qs[i][2:3]), color = qs[i][1] > 0 ? :red : :dodgerblue,
+	    markersize = 10) for i in eachindex(qs)]
+	qs = charges(; nq = 4)
+	streamplot!(ax2, fieldE, -2..2, -2..2; arrow_size = 6, linewidth = 0.5,
+	    colorrange = (-3,3), colormap = ([:black, :black, :orange, :red]))
+	[scatter!(ax2, Makie.Point(qs[i][2:3]), color = qs[i][1] > 0 ? :red : :dodgerblue,
+	    markersize = 10) for i in eachindex(qs)]
+	limits!(ax2, -2,2,-2,2)
+	hidedecorations!(ax1; grid = false)
+	hidedecorations!(ax2; grid = false)
+	fig
+end
+```
+
+### ODE solution
+
+```{julia}
+let
+	odeSol(x, y) = Point2f(-x, 2y) # x'(t) = -x, y'(t) = 2y
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x", ylabel = "y", backgroundcolor = :black)
+	streamplot!(ax, odeSol, -2 .. 4, -2 .. 2, colormap = Reverse(:plasma),
+	    gridsize = (32, 32), arrow_size = 10)
+	fig
+end
+```
+
+### Field Heatmap
+
+```{julia}
+let
+	testField(x, y) = Point2f(-x, 2y) # x'(t) = -x, y'(t) = 2y
+	x = -2:0.1:4
+	y = -2:0.1:2
+	u2(x, y) = -x
+	v2(x, y) = 2y
+	z = [log10(sqrt(u2(x, y)^2 + v2(x, y)^2)) for x in x, y in y]
+	
+	fig = Figure(resolution = (600, 400), fontsize = 22, fonts = (;regular="CMU Serif"))
+	ax = fig[1, 1] = Makie.Axis(fig, xlabel = L"x", ylabel = L"y")
+	fs = heatmap!(ax, x, y, z, colormap = Reverse(:plasma))
+	streamplot!(ax, testField, x, y, colormap = Reverse(:plasma),
+	    gridsize = (32, 32), arrow_size = 10)
+	Colorbar(fig[1, 2], fs, label = L"\log_{10}[(u^2+v^2)^{1/2}]", width = 20,
+	    labelsize = 14, ticklabelsize = 14)
+	colgap!(fig.layout, 5)
+	fig
+end
+```
+
+### Poincare - Van der Paul
+
+```{julia}
+let
+	nonStablePoincare(x, y) = Point2f(x * (x^2 + y^2 - 1) - y * (x^2 + y^2 + 1), y * (x^2 + y^2 - 1) + x * (x^2 + y^2 + 1))
+	stableVanDerPaul(x, y) = Point2f(y, (1 - x^2) * y - x)
+	semiStable(x, y) = Point2f(-y + x * (-1 + x^2 + y^2)^2, x + y * (-1 + x^2 + y^2)^2)
+	titles = ["non-stable", "stable", "semi-stable"]
+	functions = [nonStablePoincare, stableVanDerPaul, semiStable]
+	cmaps = [:plasma, :viridis, :gnuplot2]
+	
+	fig = Figure(resolution = (1800, 600), fontsize = 24)
+	axs = [Makie.Axis(fig[1, i], xlabel = "x", ylabel = "y", title = titles[i],
+	    aspect = 1, backgroundcolor = :black) for i in 1:3]
+	[streamplot!(axs[i], functions[i], -4 .. 4, -4 .. 4, colormap = Reverse(cmaps[i]),
+	    gridsize = (32, 32), arrow_size = 10) for i in 1:3]
+	[hideydecorations!(axs[2], grid = false, ticks = false) for i in 2:3]
+	[limits!(axs[i], -4, 4, -4, 4) for i in 1:3]
+	fig
+end
+```
+
+### Complex Polya Field
+
+```{julia}
+let
+	x = y = -2:0.005:2
+	f(z) = 1 / (z * (z^2 - z - 1 - 3im))
+	fvals = [f(u + 1im * v) for u in x, v in y]
+	fvalues = abs.(fvals)
+	fargs = angle.(fvals)
+	polya(x, y) = Point2f(real(f(x + 1im * y)), -imag(f(x + 1im * y)))
+	
+	fig = Figure(resolution = (900, 400))
+	axs = [Makie.Axis(fig[1, i], aspect = 1) for i in 1:2]
+	cmap = :roma
+	streamplot!(axs[1], polya, -2 .. 2, -2 .. 2, colormap = [:black, :red],
+	        gridsize = (40, 40), arrow_size = 6, linewidth = 1)
+	pltobj2 = heatmap!(axs[2], x, y, fargs, colorrange = (-π, π), colormap = cmap)
+	streamplot!(axs[2], polya, -2 .. 2, -2 .. 2, colormap = [:black, :black],
+	        gridsize = (40, 40), arrow_size = 6, linewidth = 1)
+	Colorbar(fig[1, 3], pltobj2, ticks = ([-π, -π / 2, 0, π / 2, π],
+	        [L"-\pi", L"-\pi/2", L"0", L"\pi/2", L"\pi"]))
+	limits!(axs[1], -2, 2, -2, 2)
+	limits!(axs[2], -2, 2, -2, 2)
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	colsize!(fig.layout, 2, Aspect(1, 1.0))
+	fig
+end
+```
+
+## Statistics
+
+### Histogram
+
+#### Hist
+
+```{julia}
+#=let
+	Random.seed!(124)
+	cmap = GLMakie.resample_cmap(:linear_wcmr_100_45_c42_n256, 256;
+	    alpha = rand(256))
+	
+	fig = Figure(resolution = (600,400))
+	ax = Makie.Axis(fig[1,1]; )
+	hist!(rand(Distributions.Normal(2.6,0.4), 1000), normalization = :pdf, offset = -1,
+	    color = :values, colormap = :plasma, direction = :x, fillto = -0.5)
+	hist!(rand(Distributions.Normal(2.6,0.4), 1000), normalization = :pdf, offset = 1,
+	    color = :grey10, direction = :x, scale_to = -0.5)
+	hist!(rand(Distributions.Normal(0.2,0.2), 1000), normalization = :pdf, offset = 4,
+	    strokewidth = 1, color = :transparent, strokecolor = :black,
+	    direction = :y, scale_to = -1)
+	hist!(rand(Distributions.Normal(0.2,0.2), 1000), normalization = :pdf, color = :values,
+	    colormap = cmap, strokewidth = 1, strokecolor = :black,
+	    bar_labels = :values, label_color = :black, label_size = 12,
+	    label_formatter=x-> round(x, digits=1))
+	hidedecorations!(ax; grid = false)
+	fig
+end=#
+```
+
+#### Histograms on the sides
+
+```{julia}
+let
+	Random.seed!(123)
+	n = 200
+	x, y, color = randn(n) / 2, randn(n), randn(n)
+	fig = Figure(resolution=(600, 400))
+	ax1 = Makie.Axis(fig[1, 1])
+	ax2 = Makie.Axis(fig[2, 1])
+	ax3 = Makie.Axis(fig[2, 2])
+	hist!(ax1, x; color=(:orangered, 0.5), strokewidth=0.5)
+	scatter!(ax2, x, y; color=color, markersize=10, strokewidth=0)
+	hist!(ax3, y; direction=:x, color=(:dodgerblue, 0.5),
+	    strokewidth=0.5)
+	xlims!(ax1, -4, 4)
+	limits!(ax2, -4, 4, -3, 3)
+	ylims!(ax3, -3, 3)
+	hideydecorations!(ax3, ticks=false, grid=false)
+	hidexdecorations!(ax1, ticks=false, grid=false)
+	colsize!(fig.layout, 1, Relative(2 / 3))
+	rowsize!(fig.layout, 1, Relative(1 / 3))
+	colgap!(fig.layout, 10)
+	rowgap!(fig.layout, 10);
+	fig
+end
+```
+
+#### Bins and counts
+
+```{julia}
+let
+	Random.seed!(13)
+	n = 3000
+	data = randn(n)
+	fig = Figure(resolution = (1200, 800), fonts = (; regular= "sans"), fontsize = 20)
+	ax1 = Makie.Axis(fig[1, 1]; xlabel = "value", ylabel = "samples")
+	ax2 = Makie.Axis(fig[1, 2]; xlabel = "value", ylabel = "counts")
+	ax3 = Makie.Axis(fig[2, 1]; xlabel = "value", ylabel = "counts")
+	ax4 = Makie.Axis(fig[2, 2]; xlabel = "value", ylabel = "counts")
+	#scatter plot
+	scatter!(ax1, data, 1:n; markersize = 4, color = :black)
+	hist!(ax2, data; label = "default")
+	hist!(ax3, data; bins = 20, color = :orange, strokewidth = 1,
+	    strokecolor = :black, label = "20 bins")
+	hist!(ax4, data; bins = [-4, -2, -1, 0, 1, 2, 4], color = :gray90,
+	    strokewidth = 1, strokecolor = :black, label = "manual bins")
+	axislegend(ax2; position = :rt)
+	axislegend(ax3; position = :rt)
+	axislegend(ax4; position = :rt)
+	fig
+end
+```
+
+#### Normalization options
+
+```{julia}
+let
+	Random.seed!(13)
+	n = 3000
+	data = randn(n)
+	normf = [:none, :pdf, :density, :probability]
+	colors = Makie.wong_colors()
+	fig = Figure(resolution = (1200, 800), fonts = (; regular ="sans"), fontsize = 20)
+	axs = [Makie.Axis(fig[i, j], xlabel = i == 2 ? "value" : "") for i in 1:2 for j in 1:2]
+	[hist!(axs[i], data; normalization = normf[i], color = colors[i],
+	    label = "$(normf[i])") for i in 1:4]
+	[axislegend(axs[i], position = :rt) for i in 1:4]
+	fig
+end
+```
+
+#### Hist + PDF = Density
+
+```{julia}
+let
+	Random.seed!(13)
+	n = 3000
+	data = randn(n)
+	fig = Figure(resolution = (600, 400))
+	ax1 = Makie.Axis(fig[1, 1], xlabel = "value")
+	hist!(ax1, data; normalization = :pdf, color = (:green, 0.5), label = "hist & pdf")
+	density!(ax1, data; color = (:orange, 0.25), label = "density!", strokewidth = 1)
+	axislegend(ax1, position = :rt)
+	fig
+end
+```
+
+#### Hist from image
+
+```{julia}
+let
+	# example by @cormullion
+	function  image_histogram()
+	    img = TestImages.testimage("lighthouse")
+	    reds = vec(float.(Images.red.(img)))
+	    greens = vec(float.(Images.green.(img)))
+	    blues = vec(float.(Images.blue.(img)))
+	
+	    fig = Figure(;resolution = (1200,400))
+	    ax1 = Makie.Axis(fig[1, 1], aspect = DataAspect())
+	    ax2 = Makie.Axis(fig[1, 2])
+	    for (i, col) = enumerate([:red, :green, :blue])
+	        hist!(ax2, (reds, greens, blues)[i];
+	            scale_to=-0.6,
+	            bins=60,
+	            offset=i,
+	            direction=:x,
+	            color=(col, 0.85)
+	            )
+	    end
+	    image!(ax1, rotr90(img))
+	    hidedecorations!(ax1)
+	    hidespines!(ax1)
+	    fig
+	end
+	
+	fig = with_theme(image_histogram, theme_ggplot2())
+end
+```
+
+### Density
+
+#### Distributions
+
+```{julia}
+let
+	Random.seed!(124)
+	colors = ["#FF410D", "#6EE2FF", "#F7C530", "#95CC5E", "#D0DFE6", "#F79D1E"]
+	μσpairs = [[2,0.5], [-1,2], [0.25,1], [1,0.1], [1, 0.05], [1.2,0.1]]
+	
+	fig = Figure(resolution = (600,400))
+	ax = Makie.Axis(fig[1,1]; palette = (; patchcolor = tuple.(colors, 0.45)))
+	for (idx, μσ) in enumerate(μσpairs)
+	    density!(rand(Distributions.Normal(μσ...), 1000), strokewidth = 1.5,
+	        strokecolor = :grey20, direction = idx > 3 ? :x : :y,
+	        linestyle = idx > 3 ? :dash : :solid,
+	        label = "$(μσ[1]),  $(μσ[2])")
+	end
+	axislegend(L"\mu,\quad\sigma"; position= :cb, titlesize= 22)
+	hidedecorations!(ax; grid = false);
+	fig
+end
+```
+
+#### RDatasets: mtcars
+
+```{julia}
+let
+	cars = dataset("datasets", "mtcars")
+	byCat = cars.Cyl
+	categ = unique(byCat)
+	colors1 = categorical_colors(:Hiroshige, length(categ))
+	colors2 = categorical_colors(:gnuplot, length(categ))
+	
+	fig = Figure(resolution = (600, 800))
+	ax1 = Makie.Axis(fig[2, 1], xlabel = "MPG", ylabel = "density", xgridstyle = :dash,
+	    ygridstyle = :dash, rightspinevisible = false, topspinevisible = false)
+	ax2 = Makie.Axis(fig[3, 1], xlabel = "MPG", ylabel = "density")
+	for (i, c) in enumerate(categ)
+	    indc = findall(x -> x == c, byCat)
+	    density!(ax1, cars.MPG[indc]; color = (colors1[i], 0.5), label = "$(c)",
+	        strokewidth = 1.25, strokecolor = colors1[i])
+	    density!(ax2, cars.MPG[indc], color = (colors2[i], 0.5), label = "$(c)",
+	        strokewidth = 1.25, strokecolor = colors2[i])
+	end
+	Legend(fig[1, 1], ax1, "Cyl", orientation = :horizontal,
+	    tellheight = true, tellwidth = false,
+	    framevisible = false, titleposition = :left)
+	Legend(fig[3, 2], ax2, "Cyl")
+	fig
+end
+```
+
+### Boxplots
+
+#### Boxplots collection
+
+```{julia}
+#=let
+	Random.seed!(13)
+	n = 3000
+	colors = GLMakie.resample_cmap(:spring, 8)[3:end]
+	
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1,1]; palette = (; patchcolor = colors),
+	    xticks = (1:7, ["cat 1", "A", "B", "C", "D", "E", "F"]),
+	    yticks = ([-5], ["cat 2"]), yticklabelrotation = π/2)
+	boxplot!(ax, fill(-5,n), rand(Distributions.Normal(0, 0.5), n); orientation=:horizontal,
+	    whiskerwidth = 1, width = 2, color = (:orange, 0.95),
+	    whiskercolor = :red, mediancolor = :yellow, markersize = 8,
+	    strokecolor = :black, strokewidth = 1, label = "horizontal")
+	boxplot!(ax, fill(1,n), rand(Distributions.Normal(1,  3), n); whiskerwidth = 1,
+	    width = 0.5, color = :dodgerblue, whiskercolor = :dodgerblue,
+	    mediancolor = :grey20, markersize = 5, strokecolor = :grey20,
+	    strokewidth = 1, label = "vertical")
+	for i in 2:7
+	    boxplot!(ax, fill(i,n), rand(Distributions.Normal(rand(-2:5), 2*rand() + 0.3), n);
+	        whiskerwidth = 1, width = 0.35)
+	end
+	axislegend(ax, position = :lt)
+	fig
+end=#
+```
+
+#### Vertical / Horizontal
+
+```{julia}
+let
+	Random.seed!(13)
+	n = 3000
+	data_r = randn(n)
+	a = fill(1, n)
+	fig = Figure(resolution = (600, 400))
+	ax1 = Makie.Axis(fig[1, 1], xlabel = "variable", ylabel = "values",
+	    xticks = ([1], ["normal Distribution"]))
+	ax2 = Makie.Axis(fig[1, 2], xlabel = "values", ylabel = "variable",
+	    yticks = ([1], ["normal Distribution"]), yticklabelrotation = pi / 2)
+	
+	boxplot!(ax1, a, data_r; whiskerwidth = 1, width = 0.35, color = (:red, 0.45),
+	    whiskercolor = (:red, 1), mediancolor = :red, markersize = 8,
+	    strokecolor = :black, strokewidth = 1, label = "vertical")
+	limits!(ax1, 0, 2, -5, 5)
+	boxplot!(ax2, a, data_r; orientation = :horizontal, whiskerwidth = 1, width = 0.35,
+	    color = (:navy, 0.45), whiskercolor = (:navy, 1), mediancolor = :navy,
+	    markersize = 8, strokecolor = :black, strokewidth = 1,
+	    label = "horizontal")
+	limits!(ax2, -5, 5, 0, 2)
+	axislegend(ax1, position = :rb, framecolor = :transparent)
+	axislegend(ax2, position = :rt, bgcolor = (:dodgerblue, 0.2))
+	fig
+end
+```
+
+#### Boxes: airquality
+
+```{julia}
+let
+	airquality = dataset("datasets", "airquality")
+	categories = ["Ozone", "Solar.R", "Wind", "Temp"]
+	colors = categorical_colors(:Set1, length(categories))
+	
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xticks = (1:length(categories), categories))
+	for (indx, f) in enumerate(categories)
+	    datam = filter(x -> x !== missing, airquality[:, f])
+	    a = fill(indx, length(datam))
+	    boxplot!(ax, a, datam; whiskerwidth = 1, width = 0.35,
+	        color = (colors[indx], 0.45), whiskercolor = (colors[indx], 1),
+	        mediancolor = :black)
+	end
+	fig
+end
+```
+
+### Violin
+
+#### Single
+
+```{julia}
+let
+	Random.seed!(13)
+	n = 3000
+	data = randn(n)
+	a = fill(1, n)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "variable", ylabel = "values",
+	    xticks = ([1], ["normal Distribution"]))
+	violin!(ax, a, data; width = 0.35, color = (:orangered, 0.45),
+	    show_median = true, mediancolor = :navy, strokecolor = :black,
+	    strokewidth = 1, label = "vertical")
+	limits!(ax, 0, 2, -5, 5)
+	axislegend(ax, position = :rt)
+	fig
+end
+```
+
+#### Violins collection
+
+```{julia}
+#=let
+	Random.seed!(124)
+	n = 4
+	colors = GLMakie.resample_cmap(:seaborn_colorblind, 8)
+	sides = [:left, :right, :right]
+	
+	fig = Figure(resolution = (600,400))
+	ax = Makie.Axis(fig[1,1]; palette = (; patchcolor = colors))
+	for i in [-5,5], j in 1:n
+	    violin!(fill(j, 1000), rand(Distributions.Normal(i,rand()+0.5), 1000);
+	    side = i >-3 ? sides[rand(1:3)] : :both)
+	end
+	violin!(fill(2.5, 1000), rand(Distributions.Normal(0,2.5), 1000); color = :transparent,
+	    strokewidth = 0.85, strokecolor = :grey10, show_median = true,
+	    mediancolor = :black)
+	violin!(fill(4.5, 1000), rand(Distributions.Normal(2,2), 1000); color = (:dodgerblue,0.1),
+	    strokewidth = 0.85, strokecolor = :dodgerblue, show_median = true,
+	    medianlinewidth = 3)
+	ax.xticks = (1:n, string.('A':'D'))
+	hideydecorations!(ax; grid = false)
+	fig
+end=#
+```
+
+#### Violins: airquality
+
+```{julia}
+let
+	airquality = dataset("datasets", "airquality")
+	categories = ["Ozone", "Solar.R", "Wind", "Temp"]
+	colors = categorical_colors(:Set1, length(categories))
+	
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xticks = (1:length(categories), categories))
+	for (indx, f) in enumerate(categories)
+	    datam = filter(x -> x !== missing, airquality[:, f])
+	    a = fill(indx, length(datam))
+	    violin!(ax, a, datam; width = 0.35, color = (colors[indx], 0.45),
+	        strokecolor = colors[indx], show_median = true, mediancolor = :black)
+	end
+	fig
+end
+```
+
+### Error bars
+
+#### Simple x-y errorbars
+
+```{julia}
+let
+	Random.seed!(145)
+	x, y = 1:2:20, 5 * rand(10)
+	yerr, xerr = 0.4 * abs.(randn(10)), abs.(randn(10))
+	fig = Figure(resolution = (600, 400), fonts = (; regular= "sans"))
+	ax = Makie.Axis(fig[1, 1]; xlabel = "variable", ylabel = "values")
+	errorbars!(ax, x, y, yerr; whiskerwidth = 12, color = :orangered)
+	errorbars!(ax, x, y, xerr; whiskerwidth = 12, direction = :x)
+	fig
+end
+```
+
+#### y errorbar with colormap
+
+```{julia}
+let
+	Random.seed!(145)
+	x, y = 1:2:20, 5 * rand(10)
+	yerr, xerr = 0.4 * abs.(randn(10)), abs.(randn(10))
+	fig = Figure(resolution = (600, 400), fonts = (; regular= "sans"))
+	ax = Makie.Axis(fig[1, 1], xlabel = "variable", ylabel = "values", xgridstyle = :dash,
+	    ygridstyle = :dash)
+	errorbars!(ax, x, y, yerr; whiskerwidth = 12, color = yerr,
+	    linewidth = 2, colormap = :viridis)
+	scatter!(ax, x, y; color = yerr, colormap = :viridis, markersize = 15)
+	fig
+end
+```
+
+#### Errorbars formation
+
+```{julia}
+let
+	Random.seed!(145)
+	n = 50
+	x = 1:n
+	y = sin.(x) .+ randn(n)/10
+	yerr = 0.2*abs.(randn(n))
+	xerr = abs.(randn(n))
+	
+	fig, ax, =  errorbars(x, y, yerr; color = 1:n, colormap = ([:black, :orangered]),
+	    whiskerwidth = 10, linewidth = 1.5,
+	    figure = (;resolution = (600,400)))
+	errorbars!(x, y, xerr; color = 1:n, colormap = ([:orangered, :black]),
+	    direction = :x, linewidth = 1.5, whiskerwidth = 10)
+	scatter!(x, y; markersize = 10, color = (:black, 0.25),
+	    strokewidth = 1, strokecolor = :black)
+	lines!(x, y; linewidth = 0.5, linestyle = :dashdot)
+	hidedecorations!(ax; grid = false)
+	fig
+end
+```
+
+### Barplots
+
+#### Barplot & y errorbar
+
+```{julia}
+let
+	Random.seed!(145)
+	x, y, yerr = 1:2:20, 5 * rand(10), 0.4 * abs.(randn(10))
+	
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "variable", ylabel = "values")
+	barplot!(ax, x, y; strokewidth = 1, color = :transparent, strokecolor = :black)
+	errorbars!(ax, x, y, yerr; whiskerwidth = 12)
+	fig
+end
+```
+
+#### x - Barplot error & y errorbar
+
+```{julia}
+let
+	Random.seed!(145)
+	x, y = 1:2:20, 5 * rand(10)
+	yerr, xerr = 0.4 * abs.(randn(10)), abs.(randn(10))
+	fig = Figure(resolution = (600, 400), fonts =(; regular= "sans"))
+	ax = Makie.Axis(fig[1, 1], xlabel = "variables", ylabel = "values")
+	barplot!(ax, x, y; width = 1.8xerr, strokewidth = 1, color = :transparent,
+	    strokecolor = :black)
+	errorbars!(ax, x, y, yerr; whiskerwidth = 12)
+	fig
+end
+```
+
+#### Barplot with colormap & y errorbar
+
+```{julia}
+let
+	Random.seed!(145)
+	x, y, yerr = 1:2:20, 5 * rand(10), 0.4 * abs.(randn(10))
+	fig = Figure(resolution = (600, 400), fonts = (; regular= "sans"))
+	ax = Makie.Axis(fig[1, 1]; xlabel = "variables", ylabel = "values")
+	barplot!(ax, x, y; strokewidth = 1, color = x, colormap = (:Spectral_10, 0.85),
+	    strokecolor = :black)
+	errorbars!(ax, x, y, yerr; whiskerwidth = 12)
+	fig
+end
+```
+
+#### Stripped Barplots
+
+```{julia}
+let
+	Random.seed!(13)
+	# patterns
+	# `'/'`, `'\\'`, `'-'`, `'|'`, `'x'`, and `'+'`
+	directions = [Vec2f(1), Vec2f(1, -1), Vec2f(1, 0), Vec2f(0, 1),
+	    [Vec2f(1), Vec2f(1, -1)], [Vec2f(1, 0), Vec2f(0, 1)]]
+	colors = [:white, :orange, (:green, 0.5), :yellow, (:blue, 0.85), :black]
+	
+	patternColors = [Makie.LinePattern(direction = hatch; width = 5, tilesize = (20, 20),
+	    linecolor = colors[indx], background_color = colors[end-indx+1])
+	        for (indx, hatch) in enumerate(directions)]
+	
+	fig, ax, pltobj = barplot(1:2, strokewidth = 2, color = ["grey", "orange"],
+	    figure = (resolution = (1200, 800), fontsize = 32))
+	for (idx, pattern) in enumerate(patternColors)
+	    barplot!(ax, [idx + 2], [idx * (2rand() + 1)], color = pattern, strokewidth = 2)
+	end
+	ax.xticks = (1:8, ["grey", "orange", "/", "\\", "-", "|", "x", "+"])
+	fig
+end
+```
+
+## Heatmap
+
+### Heatmap
+
+```{julia}
+let
+	Random.seed!(123)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1]; xlabel = "x", ylabel = "y")
+	hmap = heatmap!(2rand(20, 20) .- 1; colormap = :Spectral_11)
+	Colorbar(fig[1, 2], hmap; label = "values", width = 15, ticksize = 15, tickalign = 1)
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	colgap!(fig.layout, 7)
+	fig
+end
+```
+
+### Heatmap with text
+
+```{julia}
+let
+	Random.seed!(123)
+	m = 15
+	n = 5
+	data = rand(m, n)
+	# some fake ticks
+	alphabet = 'A':'E'
+	yticks = string.(collect(alphabet))
+	k = 4
+	itr = Iterators.product(ntuple(_ -> alphabet, k)...)
+	xticks = []
+	for word in Base.Generator(join, itr)
+	    push!(xticks, word)
+	    if length(xticks) == m
+	        break
+	    end
+	end
+	xticks = string.(xticks)
+	
+	fig = Figure(resolution = (1200, 600), fontsize = 20)
+	ax = Makie.Axis(fig[1, 1], xticks = (1:m, xticks), yticks = (1:n, yticks))
+	hmap = heatmap!(ax, data, colormap = :plasma)
+	for i in 1:15, j in 1:5
+	    txtcolor = data[i, j] < 0.15 ? :white : :black
+	    text!(ax, "$(round(data[i,j], digits = 2))", position = (i, j),
+	        color = txtcolor, align = (:center, :center))
+	end
+	Colorbar(fig[1, 2], hmap; label = "values", width = 15, ticksize = 15)
+	ax.xticklabelrotation = π / 3
+	ax.xticklabelalign = (:right, :center)
+	fig
+end
+```
+
+## Filled Curves
+
+### Bands: Intervals - Ribbon
+
+```{julia}
+let
+	x = 0:0.05:4π
+	y1 =  sin.(3x) ./ (cos.(x) .+ 2)./x
+	y2 =  -2.5cos.(x)./x
+	xl = LinRange(5,10,10)
+	yl = LinRange(1,0.5,10)
+	
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1,1])
+	lines!(x, y1; color = :dodgerblue, label = "blue")
+	band!(x, y1 .- 0.1, y1 .+ 0.1; color = (:dodgerblue, 0.2), label = "blue")
+	
+	lines!(x, y2; color = :red, label = "red")
+	band!(x, y2 .- 0.1, y2 .+ 0.1; color = (:red, 0.2), label = "red")
+	
+	lines!(xl, yl; color = :slategray1, label = "slategray1")
+	band!(xl, fill(0.5,10), yl; color= (:slategray1, 0.25),label="slategray1")
+	ylims!(-0.55,1)
+	axislegend(ax, position = :rt, merge = true)
+	hidedecorations!(ax; grid = false)
+	fig
+end
+```
+
+### Filled under line
+
+```{julia}
+let
+	x = 0:0.05:1
+	y = x .^ 2
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x", ylabel = "y")
+	lines!(x, y, color = :orangered, label = "Label")
+	band!(x, fill(0, length(x)), y; color = (:orange, 0.25), label = "Label")
+	axislegend(; merge = true, position = :lt)
+	fig
+end
+```
+
+### Filled under bell-shaped curves
+
+```{julia}
+let
+	μs = [0.25, 2, -1]
+	σs = [1.25, 1, 2]
+	colors = ["#E69F00", "#56B4E9", "#009E73"]
+	x = LinRange(-10, 10, 200)
+	fg(x, μ, σ) = exp.(.-(x .- μ) .^ 2 ./ (2σ^2)) ./ (σ * √(2π))
+	fig = Figure(resolution = (600, 400), fonts= (; regular = "CMU Serif"))
+	ax = Makie.Axis(fig[1, 1], xlabel = L"x", ylabel = L"y", xlabelsize = 22, ylabelsize = 22)
+	for (idx, μ) in enumerate(μs)
+	    lines!(x, fg(x, μ, σs[idx]); color = colors[idx],
+	        label = L"\mu = %$(μ), \sigma = %$(σs[idx])")
+	    band!(x, fill(0, length(x)), fg(x, μ, σs[idx]); color = (colors[idx], 0.1),
+	        label = L"\mu = %$(μ), \sigma = %$(σs[idx])")
+	end
+	axislegend(; merge = true, framecolor = :red)
+	fig
+end
+```
+
+### Band - Ribbon - Between
+
+```{julia}
+let
+	x = LinRange(-10, 10, 200)
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x", ylabel = "y")
+	band!(x, sin.(x), sin.(x) .+ 1; color = (:blue, 0.2))
+	band!(x, cos.(x), 1 .+ cos.(x); color = (:red, 0.2))
+	fig
+end
+```
+
+### Confidence Region
+
+```{julia}
+let
+	x = y = -10:0.11:10
+	y1d = sin.(x) ./ x
+	lower = y1d .- 0.1
+	upper = y1d .+ 0.1
+	
+	fig = Figure(resolution = (600, 400))
+	ax = Makie.Axis(fig[1, 1], xlabel = "x", ylabel = "y")
+	lines!(x, y1d, color = :black)
+	band!(x, lower, upper; color = (:green, 0.2))
+	fig
+end
+```
+
+## Polygons
+
+### Polygons: ngon
+
+```{julia}
+#=let
+	n = 20
+	function ngonShape(h, k, r, n)
+	    CairoMakie.GeometryBasics.Polygon([Point2f(h .+ r*sin.(m*2π/n),k .+ r*cos.(m*2π/n)) for m in 1:n])
+	end
+	polysCentric = [ngonShape(0, 0, 3/i^1.5, i) for i in 3:n]
+	polysCircular = [ngonShape(√2/2*sin(θ), √2/2*cos(θ), 0.15/√idx, idx + 2)
+	    for (idx, θ) in enumerate(LinRange(0,2π*(1 -1/(n-2)), n-2))]
+	cmap = GLMakie.resample_cmap(:linear_protanopic_deuteranopic_kbw_5_98_c40_n256, 100)[3:end]
+	
+	with_theme(theme_black()) do
+	    fig, ax, = poly(polysCentric; color = 1:n-2, colormap = cmap,
+	        axis = (;aspect = DataAspect()), figure = (;resolution = (600,400)))
+	    poly!(polysCircular; color = 1:n-2, colormap = cmap)
+	    hidedecorations!(ax; grid = false)
+	    hidespines!(ax)
+	    fig
+	end
+end=#
+```
+
+# 3D
+
+## Lines
+
+#### Line 3d
+
+```{julia}
+let
+	t = 0:0.1:15
+	lines(sin.(t), cos.(t), t/4; color = t/4, linewidth = 4,
+	    colormap = :plasma)
+end
+```
+
+#### Lines, contour3d, contour, wireframe
+
+```{julia}
+let
+	function peaks(; n = 49)
+	    x = LinRange(-3, 3, n)
+	    y = LinRange(-3, 3, n)
+	    a = 3 * (1 .- x').^2 .* exp.(-(x'.^2) .- (y .+ 1).^2)
+	    b = 10 * (x' / 5 .- x'.^3 .- y.^5) .* exp.(-x'.^2 .- y.^2)
+	    c = 1 / 3 * exp.(-(x' .+ 1).^2 .- y.^2)
+	    return (x, y, a .- b .- c)
+	end
+	x, y, z = peaks(; n=30)
+	with_theme(theme_dark()) do
+	    fig =  Figure(resolution = (1200,800))
+	    axs = [Axis3(fig[1,i]; aspect = :data) for i in 1:3]
+	    contour3d!(axs[1], x, y, z; levels = 20, transparency = true)
+	    contour!(axs[1], x, y, z; levels = 20, transformation = (:xy, minimum(z)),
+	        transparency = true)
+	    lines!(axs[2], cat(x, NaN, dims=1), y, vcat(z, fill(NaN,30)'),
+	        color = maximum(z, dims=1)[1,:], transparency = false)
+	    lines!(axs[2], cat(x, NaN, dims=1), y,
+	        vcat(z, fill(NaN,30)')*0 .+ minimum(z); color = maximum(z, dims=1)[1,:],
+	        transparency = true)
+	    wireframe!(axs[3], x, y, z; color = :grey90, transparency = true)
+	    wireframe!(axs[3], x, y, z*0 .+ minimum(z); color = :grey90,
+	        transparency = true)
+	    hidedecorations!.(axs; grid = false)
+	    fig
+	end
+end
+```
+
+#### Wireframe: torus
+
+```{julia}
+let
+	U = LinRange(-pi, pi, 100)
+	V = LinRange(-pi, pi, 20)
+	x1 = [cos(u) + .5 * cos(u) * cos(v)      for u in U, v in V]
+	y1 = [sin(u) + .5 * sin(u) * cos(v)      for u in U, v in V]
+	z1 = [.5 * sin(v)                        for u in U, v in V]
+	x2 = [1 + cos(u) + .5 * cos(u) * cos(v)  for u in U, v in V]
+	y2 = [.5 * sin(v)                        for u in U, v in V]
+	z2 = [sin(u) + .5 * sin(u) * cos(v)      for u in U, v in V]
+	
+	fig = Figure(resolution =(1200,800))
+	ax = LScene(fig[1,1], show_axis = true)
+	wireframe!(ax, x1, y1, z1; transparency = true)
+	axis = ax.scene[OldAxis]
+	tstyle = axis[:names]
+	tstyle[:fontsize] = 16
+	tstyle[:gap] = 8
+	axis[:ticks][:textcolor] = :black
+	axis[:ticks][:fontsize] = 10
+	fig
+end
+```
+
+#### Archimedean Spiral
+
+```{julia}
+let
+	a, m, z₀ = 1, 2.1, 0
+	φ = range(0,20π,length=500)
+	r = a*φ
+	x, y, z = r .* cos.(φ), r .* sin.(φ), m .* r .+ z₀;
+	
+	with_theme(theme_black()) do
+	    fig = Figure(resolution = (1200, 800))
+	    ax = LScene(fig[1,1])
+	    line3d = lines!(x, y, z, color = z, colormap = :viridis)
+	    lines!(x, y, 0*z, color = z, colormap = (:viridis, 0.65))
+	
+	    axis = ax.scene[OldAxis]
+	    axis[:names, :axisnames] = ("x", "y", "z")
+	    tstyle = axis[:names] #  get the nested attributes and work directly with them
+	    tstyle[:fontsize] = 10
+	    tstyle[:textcolor] = (:red, :green, :white)
+	    tstyle[:font] = "helvetica"
+	    tstyle[:gap] = 5
+	    axis[:ticks][:textcolor] = :white
+	    axis[:ticks][:fontsize] = 5
+	    Colorbar(fig[1,2], line3d, label = "z",ticklabelsize = 14,
+	        width = 12, height = Relative(2/4), tickalign=0)
+	    fig
+	end
+end
+```
+
+## Surfaces
+
+### Surface
+
+```{julia}
+let
+	x = y = LinRange(-2, 2, 51)
+	z = (-x .* exp.(-x .^ 2 .- (y') .^ 2)) .* 4
+	zmin, zmax = minimum(z), maximum(z)
+	cmap = :viridis
+	
+	fig = Figure(resolution = (1200, 800), fontsize = 22)
+	ax = Axis3(fig[1, 1], aspect = :data, perspectiveness = 0.5, elevation = π / 9,
+	    xzpanelcolor = (:black, 0.75), yzpanelcolor = (:black, 0.75),
+	    zgridcolor = :grey, ygridcolor = :grey, xgridcolor = :grey)
+	sm = surface!(ax, x, y, z; colormap = cmap, colorrange = (zmin, zmax),
+	    transparency = true)
+	xm, ym, zm = minimum(ax.finallimits[])
+	contour!(ax, x, y, z; levels = 20, colormap = cmap, linewidth = 2,
+	    colorrange = (zmin, zmax), transformation = (:xy, zmin),
+	    transparency = true)
+	wireframe!(ax, x, y, z; overdraw = true, transparency = true,
+	    color = (:black, 0.1))
+	Colorbar(fig[1, 2], sm, height = Relative(0.5))
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+### Branching
+
+```{julia}
+let
+	t = 0:0.1:15
+	u = -1:0.1:1
+	x = [u * sin(t) for t in t, u in u]
+	y = [u * cos(t) for t in t, u in u]
+	z = [t / 4 for t in t, u in u]
+	fig = surface(x, y, z; colormap = [:orangered, :orangered],
+	    lightposition = Vec3f(0, 0, 0), ambient = Vec3f(0.65, 0.65, 0.65),
+	    backlight = 5.0f0, figure = (; resolution = (1200, 800)))
+	wireframe!(x, y, z, overdraw = false, linewidth = 0.1) # try overdraw = true
+	fig
+end
+```
+
+#### Constraints
+
+```{julia}
+let
+	x = LinRange(-2, 0.5, 501)
+	y = LinRange(-2, 2, 501);
+	# objective function
+	z = 100 .* (y' .- x .^ 2) .^ 2 .+ (1 .- x) .^ 2;
+	# build constraints
+	zin = copy(z)
+	zout1 = copy(z)
+	zout2 = copy(z)
+	for (i, x) in enumerate(x), (j, y) in enumerate(y)
+	    if x * y >= 1
+	        zin[i, j] = NaN
+	        zout1[i, j] = z[i, j]
+	        zout2[i, j] = NaN
+	    elseif (x + y^2) >= 1
+	        zin[i, j] = NaN
+	        zout1[i, j] = NaN
+	        zout2[i, j] = z[i, j]
+	    else
+	        zin[i, j] = z[i, j]
+	        zout1[i, j] = NaN
+	        zout2[i, j] = NaN
+	    end
+	end
+	fig = Figure(resolution = (1200, 800), fontsize = 22)
+	ax = Axis3(fig[1, 1], aspect = (1, 1, 1), perspectiveness = 0.5, elevation = π / 9,
+	    azimuth = 0.2π, zgridcolor = :grey, ygridcolor = :grey, xgridcolor = :grey)
+	pltobj = surface!(ax, x, y, zin; colormap = Reverse(:viridis))
+	surface!(ax, x, y, zout1; colormap = [(:orangered, 0.5), (:orangered, 0.5)])
+	surface!(ax, x, y, zout2; colormap = [(:dodgerblue, 0.5), (:dodgerblue, 0.5)])
+	Colorbar(fig[1, 2], pltobj, label = "xy <=1 & x + y^2<=1",
+	    height = Relative(0.5), width = 20)
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+#### Gabriel's horn
+
+```{julia}
+let
+	u = LinRange(0.8, 6, 50)
+	v = LinRange(0, 2π, 50)
+	X1 = [u for u in u, v in v]
+	Y1 = [(1/u) * cos(v) for u in u, v in v]
+	Z1 = [(1/u) * sin(v) for u in u, v in v]
+	
+	fig = Figure(resolution=(1200, 800))
+	ax = LScene(fig[1, 1], show_axis=false)
+	pltobj = surface!(ax, -X1, -Y1, Z1; shading=true, ambient=Vec3f(0.65, 0.65, 0.65),
+	    backlight=1.0f0, color=sqrt.(X1 .^ 2 .+ Y1 .^ 2 .+ Z1 .^ 2),
+	    colormap=Reverse(:bone_1), transparency=true,
+	    )
+	wireframe!(ax, -X1, -Y1, Z1; transparency = true,
+	    color = :gray, linewidth = 0.5)
+	zoom!(ax.scene, cameracontrols(ax.scene), 0.98)
+	Colorbar(fig[1, 2], pltobj, height=Relative(0.5))
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+#### Klein Bottle
+
+```{julia}
+let
+	# The bottle
+	u = LinRange(0, π, 100)
+	v = LinRange(0, 2π, 100)
+	x = [-2 / 15 * cos(u) * (3 * cos(v) - 30 * sin(u) + 90 * cos(u)^4 * sin(u)
+	    - 60 * cos(u)^6 * sin(u) + 5 * cos(u) * cos(v) * sin(u)) for u in u, v in v]
+	y = [-1 / 15 * sin(u) * (3 * cos(v) - 3 * cos(u)^2 * cos(v) - 48 * cos(u)^4 * cos(v) + 48 * cos(u)^6 * cos(v)
+	    - 60 * sin(u) + 5 * cos(u) * cos(v) * sin(u) - 5 * cos(u)^3 * cos(v) * sin(u)
+	    - 80 * cos(u)^5 * cos(v) * sin(u) + 80 * cos(u)^7 * cos(v) * sin(u)) for u in u, v in v]
+	z = [2 / 15 * (3 + 5 * cos(u) * sin(u)) * sin(v) for u in u, v in v]
+	
+	fig = Figure(resolution = (1200, 800))
+	ax = LScene(fig[1, 1], show_axis = false)
+	surface!(ax, x, y, z; color = sqrt.(x.^2 .+ y.^2), colormap = (:Spectral_11, 0.8))
+	fig
+end
+```
+
+#### One colour
+
+```{julia}
+let
+	t = range(0, 2π, length = 50)
+	u = -1:0.1:1
+	x = [u * sin(t) for t in t, u in u]
+	y = [u * cos(t) for t in t, u in u]
+	z = [u for t in t, u in u]
+	fig = surface(x, y, z, colormap = [:dodgerblue, :dodgerblue],
+	    lightposition = Vec3f(0, 0, 0.8), ambient = Vec3f(0.6, 0.6, 0.6),
+	    backlight = 2.0f0)
+	wireframe!(x, y, z; overdraw = false, linewidth = 0.1) # try overdraw = true
+	fig
+end
+```
+
+#### Complex function
+
+```{julia}
+let
+	x = -2:0.005:2
+	y = -2:0.005:2
+	f(z) = (z^2 + 1) / (z^2 - 1)
+	fvals = [f(u + 1im * v) for u in x, v in y]
+	fvalues = abs.(fvals)
+	fargs = angle.(fvals)
+	indxCut = fvalues .> 3
+	fvalues[indxCut] .= 3.01
+	
+	fig, ax, pltobj = surface(x, y, fvalues, color = fargs,
+	    colormap = :roma, colorrange = (-π, π),
+	    backlight = 1.0f0, highclip = :black,
+	    figure = (; resolution = (1200, 800), fontsize = 22))
+	Colorbar(fig[1, 2], pltobj, height = Relative(0.5))
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+#### Revolution surface
+
+```{julia}
+let
+	u = LinRange(0, 1, 50)
+	v = LinRange(0, 2π, 50)
+	X1 = [u for u in u, v in v]
+	Y1 = [(u^4 - u^2) * cos(v) for u in u, v in v]
+	Z1 = [(u^4 - u^2) * sin(v) for u in u, v in v]
+	
+	fig, ax, pltobj = surface(X1, Y1, Z1; shading = true, ambient = Vec3f(0.65, 0.65, 0.65),
+	    backlight = 1.0f0, color = sqrt.(X1 .^ 2 .+ Y1 .^ 2 .+ Z1 .^ 2),
+	    colormap = :viridis, transparency = true,
+	    figure = (; resolution = (1200, 800), fontsize = 22))
+	Colorbar(fig[1, 2], pltobj, height = Relative(0.5))
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+#### Revolution surface s
+
+```{julia}
+let
+	u = LinRange(-1.5, 2, 50)
+	v = LinRange(0, 2 * pi, 50)
+	X1 = [u for u in u, v in v]
+	Y1 = [(u^2 + 1) * cos(v) for u in u, v in v]
+	Z1 = [(u^2 + 1) * sin(v) for u in u, v in v]
+	
+	fig, ax, pltobj = surface(X1, Y1, Z1; shading = true, ambient = Vec3f(0.95, 0.95, 0.95),
+	    backlight = 1.0f0, color = sqrt.(X1 .^ 2 .+ Y1 .^ 2 .+ Z1 .^ 2),
+	    colormap = :Isfahan2, transparency = true,
+	    figure = (; resolution = (1200, 800), fontsize = 22))
+	wireframe!(X1, Y1, Z1; linewidth = 0.2, transparency = true)
+	Colorbar(fig[1, 2], pltobj, height = Relative(0.5))
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	fig
+end
+```
+
+#### Tesseral Spherical Harmonics
+
+```{julia}
+let
+	function Y(θ, ϕ, l, m)
+	    if m < 0
+	        return (-1)^m * √2 * Nlm(l, abs(m)) * Plm(l, abs(m), cos(θ)) * sin(abs(m) * ϕ)
+	    elseif m == 0
+	        return sqrt((2 * l + 1) / 4π) * Plm(l, m, cos(θ))
+	    else
+	        return (-1)^m * √2 * Nlm(l, m) * Plm(l, m, cos(θ)) * cos(m * ϕ)
+	    end
+	end
+	# Grids of polar and azimuthal angles
+	θ = LinRange(0, π, 200)
+	ϕ = LinRange(0, 2π, 200)
+	x = [sin(θ) * sin(ϕ) for θ in θ, ϕ in ϕ]
+	y = [sin(θ) * cos(ϕ) for θ in θ, ϕ in ϕ]
+	z = [cos(θ) for θ in θ, ϕ in ϕ]
+	l = 10
+	m = 1
+	Ygrid = [Y(θ, ϕ, l, m) for θ in θ, ϕ in ϕ]
+	Ylm = abs.(Ygrid)
+	cmap = [:dodgerblue, :white]
+	
+	with_theme(theme_dark()) do
+	    fig = Figure(resolution = (1200, 800), fontsize = 22)
+	    axs = [Makie.Axis3(fig[1, j], aspect = :data) for j in 1:2]
+	    pltobj = surface!(axs[1], x, y, z; color = Ygrid,
+	        colormap = cmap,
+	        shading = false)
+	    surface!(axs[2], Ylm .* x, Ylm .* y, Ylm .* z;
+	        color = Ygrid,
+	        colormap = cmap,
+	        shading = false)
+	    Colorbar(fig[1, 3], pltobj, label = "Yₗₘ(θ,ϕ)", tickwidth = 2, tickalign = 1,
+	        width = 25, ticksize = 25, height = Relative(0.5))
+	    fig[0, 1:2] = Makie.Label(fig, "Tesseral Spherical Harmonics l = $(l), m = $(m)",
+	        fontsize = 30, color = (:white, 0.85))
+	    hidedecorations!.(axs; grid = false)
+	    fig
+	end
+end
+```
+
+#### Torus
+
+```{julia}
+let
+	U = LinRange(-pi, pi, 100)
+	V = LinRange(-pi, pi, 20)
+	x1 = [cos(u) + 0.5 * cos(u) * cos(v) for u in U, v in V]
+	y1 = [sin(u) + 0.5 * sin(u) * cos(v) for u in U, v in V]
+	z1 = [0.5 * sin(v) for u in U, v in V]
+	x2 = [1 + cos(u) + 0.5 * cos(u) * cos(v) for u in U, v in V]
+	y2 = [0.5 * sin(v) for u in U, v in V]
+	z2 = [sin(u) + 0.5 * sin(u) * cos(v) for u in U, v in V]
+	
+	fig = Figure(resolution = (1200, 800))
+	ax = LScene(fig, show_axis = true)
+	tori1 = surface!(ax, x1, y1, z1; colormap = :viridis, shading = false,
+	    transparency = true)
+	tori2 = surface!(ax, x2, y2, z2; colormap = :plasma, shading = false,
+	    transparency = false)
+	wireframe!(ax, x1, y1, z1; linewidth = 0.5, transparency = true)
+	
+	axis = ax.scene[OldAxis]
+	axis[:names, :axisnames] = ("x", "y", "z")
+	tstyle = axis[:names] #  get the nested attributes and work directly with them
+	
+	tstyle[:fontsize] = 15
+	tstyle[:textcolor] = (:red, :green, :black)
+	tstyle[:font] = "helvetica"
+	tstyle[:gap] = 10
+	axis[:ticks][:textcolor] = :black
+	axis[:ticks][:fontsize] = 10
+	cbar1 = Colorbar(fig, tori1, label = "z", width = 25, ticklabelsize = 20,
+	    labelsize = 20, ticksize = 25, tickalign = 1, height = Relative(0.5))
+	cbar2 = Colorbar(fig, tori2, label = "z", width = 25, flipaxis = false,
+	    labelsize = 20, ticklabelsize = 20, ticksize = 25, tickalign = 1,
+	    height = Relative(0.5))
+	fig[1, 2] = ax
+	fig[1, 3] = cbar1
+	fig[1, 1] = cbar2
+	colgap!(fig.layout, 2)
+	fig
+end
+```
+
+#### Band 3D plane surface
+
+```{julia}
+let
+	Random.seed!(13)
+	with_theme(theme_black()) do
+	    fig = Figure(resolution = (1200,800))
+	    ax = Axis3(fig;
+	        aspect = (1,0.5,0.5),
+	        azimuth = 10.42,
+	        elevation = 0.027,
+	        perspectiveness=0.5)
+	    x = 0:0.1:15
+	    y = -1:0.1:7
+	    horizontal = Point3f.(tuple.(15, y, 3exp.(-(y .-3).^2/3)))
+	    for ν in 0:7
+	        lines!(ax, x, x*0 .+ ν, besselj.(ν, x) .+ ν/3;
+	            linewidth = 2,
+	            color = :grey90,
+	            label = latexstring("J_{$(ν)}(x)"))
+	        band!(ax, Point3f.(tuple.(x, ν, ν/3)),
+	            Point3f.(tuple.(x, ν, besselj.(ν, x) .+ ν/3));
+	            color = 1:length(x),
+	            colormap = :plasma)
+	        text!(ax, latexstring("J_{$(ν)}(x)"), position = Point3f(15.2,ν, ν/3))
+	    end
+	    band!(ax, Point3f.(tuple.(0, y, 0.0)),
+	        Point3f.(tuple.(0, y, 3exp.(-(y .-3).^2/3))); color = rand(length(y)))
+	    band!(ax, horizontal[1:40], reverse(horizontal[42:end]); color = 1:40,
+	        colormap = :bone_1)
+	    lines!(ax, horizontal; color= :white, linewidth = 2)
+	    hidedecorations!(ax; grid = false)
+	    fig[1,1] = ax
+	    fig
+	end
+end
+```
+
+#### Surface filled sides
+
+```{julia}
+let
+	x = range(-3, 3, length=100)
+	y = range(-2, 2, length=100)
+	z = [sin(x + y^2) for x in x, y in y]
+	xpt = [x for x in x, y in y]
+	ypt = [y for x in x, y in y];
+	
+	function boundary_values(a)
+	    return [a[1,:]..., a[2:end,end]..., a[end,end-1:-1:1]...,a[end-1:-1:1,1]...]
+	end
+	
+	bxpt = boundary_values(xpt)
+	bypt = boundary_values(ypt)
+	bzpt = boundary_values(z)
+	
+	upper = Point3f.(bxpt, bypt, bzpt)
+	lower = Point3f.(bxpt, bypt, bzpt*0.0 .+ minimum(bzpt))
+	lower_colors = bzpt*0.0 .+ minimum(bzpt);
+
+	with_theme(theme_dark()) do
+	    colormap = :linear_worb_100_25_c53_n256
+	    fig = Figure()
+	    ax  = Axis3(fig[1,1]; aspect =(1,1,0.5),
+	        perspectiveness = 0.5f0,
+	        azimuth = -1.275π * 1.77,
+	        elevation = pi/4.5, protrusions=0)
+	
+	    surface!(ax, xpt, ypt, z;
+	        colormap=(colormap, 0.1),
+	        shading=true,
+	        transparency=true,
+	        )
+	    lines!(ax, upper; color = :white, linewidth=1.25,
+	        transparency=true)
+	    lines!(ax, lower; color = :gold, linewidth=1.25,
+	        transparency=true)
+	    band!(ax, lower, upper; color = bzpt, colormap)
+	    fig
+	end
+end
+```
+
+
+
+```{julia}
+let
+	x = range(-3, 3, length=100)
+	y = range(-2, 2, length=100)
+	z = [sin(x + y^2) for x in x, y in y]
+	xpt = [x for x in x, y in y]
+	ypt = [y for x in x, y in y];
+	
+	function boundary_values(a)
+	    return [a[1,:]..., a[2:end,end]..., a[end,end-1:-1:1]...,a[end-1:-1:1,1]...]
+	end
+	
+	bxpt = boundary_values(xpt)
+	bypt = boundary_values(ypt)
+	bzpt = boundary_values(z)
+	
+	upper = Point3f.(bxpt, bypt, bzpt)
+	lower = Point3f.(bxpt, bypt, bzpt*0.0 .+ minimum(bzpt))
+	lower_colors = bzpt*0.0 .+ minimum(bzpt);
+
+	with_theme(theme_dark()) do
+	    colormap = :linear_worb_100_25_c53_n256
+	    fig = Figure()
+	    ax  = Axis3(fig[1,1]; aspect =(1,1,0.5),
+	        perspectiveness = 0.5f0,
+	        azimuth = -1.275π * 1.77,
+	        elevation = pi/4.5, protrusions=0)
+	
+	    surface!(ax, xpt, ypt, z;
+	        colormap=(colormap, 0.1),
+	        shading=true,
+	        transparency=true,
+	        )
+	    lines!(ax, upper; color = :white, linewidth=1.25,
+	        transparency=true)
+	    lines!(ax, lower; color = :gold, linewidth=1.25,
+	        transparency=true)
+	    band!(ax, lower, upper; color = [lower_colors..., bzpt...], colormap)
+	    fig
+	end
+end
+```
+
+
+
+```{julia}
+let
+	x = range(-3, 3, length=100)
+	y = range(-2, 2, length=100)
+	z = [sin(x + y^2) for x in x, y in y]
+	xpt = [x for x in x, y in y]
+	ypt = [y for x in x, y in y];
+	
+	function boundary_values(a)
+	    return [a[1,:]..., a[2:end,end]..., a[end,end-1:-1:1]...,a[end-1:-1:1,1]...]
+	end
+	
+	bxpt = boundary_values(xpt)
+	bypt = boundary_values(ypt)
+	bzpt = boundary_values(z)
+	
+	upper = Point3f.(bxpt, bypt, bzpt)
+	lower = Point3f.(bxpt, bypt, bzpt*0.0 .+ minimum(bzpt))
+	lower_colors = bzpt*0.0 .+ minimum(bzpt);
+
+	with_theme(theme_dark(), resolution = (1250,1200)) do
+	    colormap = :linear_worb_100_25_c53_n256
+	    fig = Figure()
+	    axs  = [Axis3(fig[i,j]; aspect =(1,1,0.5),
+	        perspectiveness = 0.5f0,
+	        azimuth = -1.275π * 1.77,
+	        elevation = pi/4.5, protrusions=0)
+	        for i in 1:2 for j in 1:2
+	    ]
+	    surface!(axs[1], xpt, ypt, z;
+	        colormap,
+	        shading=true,
+	        transparency=false,
+	        )
+	    surface!(axs[2], xpt, ypt, z;
+	        colormap,
+	        shading=true,
+	        transparency=true)
+	    lines!(axs[2], upper; color = :white, linewidth=1.25,
+	        transparency=true)
+	    lines!(axs[2], lower; color = :gold, linewidth=1.25,
+	        transparency=true)
+	
+	    surface!(axs[3], xpt, ypt, z;
+	        colormap=(colormap, 0.1),
+	        shading=true,
+	        transparency=true,
+	        )
+	    lines!(axs[3], upper; color = :white, linewidth=1.25,
+	        transparency=true)
+	    lines!(axs[3], lower; color = :gold, linewidth=1.25,
+	        transparency=true)
+	    band!(axs[3], lower, upper; color = bzpt, colormap)
+	
+	    surface!(axs[4], xpt, ypt, z;
+	        colormap,
+	        shading=true,
+	        transparency=false
+	        )
+	    lines!(axs[4], upper; color = :white, linewidth=1.25,
+	        transparency=true)
+	    lines!(axs[4], lower; color = :gold, linewidth=1.25,
+	        transparency=true)
+	    band!(axs[4], lower, upper; color = bzpt, colormap)
+	    fig
+	end
+end
+```
+
+## Meshscatters
+
+### Cube: meshscatters
+
+```{julia}
+let
+	x = y = z = 1:10
+	f(x, y, z) = x^2 + y^2 + z^2
+	positions = vec([(i, j, k) for i in x, j in y, k in z])
+	vals = [f(ix, iy, iz) for ix in x, iy in y, iz in z]
+	m = Rect3f(Vec3f(-0.5), Vec3f(1))
+	
+	fig, ax, pltobj = meshscatter(positions;
+	    color = vec(vals),
+	    marker = m, markersize = 0.9,
+	    colormap = (:Egypt, 0.75),
+	    colorrange = (minimum(vals), maximum(vals)),
+	    transparency = true,
+	    shading = false,
+	    figure = (;
+	        resolution = (1200, 800)
+	        ),
+	    axis = (;
+	        type = Axis3,
+	        perspectiveness = 0.5,
+	        azimuth = 2.19,
+	        elevation = 0.57,
+	        xlabel = "x label",
+	        ylabel = "y label",
+	        zlabel = "z label",
+	        aspect = (1, 1, 1))
+	        )
+	Colorbar(fig[1, 2], pltobj; label = "f values", height = Relative(0.5))
+	colsize!(fig.layout, 1, Aspect(1, 1.0))
+	limits!(ax, -1, 11, -1, 11, -1, 11)
+	fig
+end
+```
+
+### RGBA cube
+
+```{julia}
+let
+	positions = vec([Point3f(i / 5, j / 5, k / 5) for i = 1:7, j = 1:7, k = 1:7]) ## note 7 > 5 [factor in each i,j,k], whichs is misleading
+	
+	fig, ax, obj = meshscatter(positions;
+	    marker = Rect3f(Vec3f(-0.5), Vec3f(1.8)),
+	    transparency = true,
+	    color = [RGBA(positions[i]..., 0.5) for i in eachindex(positions)],
+	    figure = (;
+	        resolution = (1200, 800))
+	)
+	fig
+end
+```
+
+### Weighted random-geometric Graph 3D
+
+```{julia}
+let
+	function RRGAdjacencyM3D(; radius = 0.17, nodes = 500, rseed = 123)
+	    Random.seed!(rseed)
+	    xy = rand(nodes, 3)
+	    x = xy[:, 1]
+	    y = xy[:, 2]
+	    z = xy[:, 3]
+	
+	    matrixAdjDiag = Diagonal(√2 * randn(nodes))
+	    matrixAdj = zeros(nodes, nodes)
+	    for point in 1:nodes-1
+	        xseps = (x[point+1:end] .- x[point]) .^ 2
+	        yseps = (y[point+1:end] .- y[point]) .^ 2
+	        zseps = (z[point+1:end] .- z[point]) .^ 2
+	
+	        distance = sqrt.(xseps .+ yseps .+ zseps)
+	        dindx = findall(distance .<= radius) .+ point
+	        if length(dindx) > 0
+	            rnd = randn(length(dindx))
+	            matrixAdj[point, dindx] = rnd
+	            matrixAdj[dindx, point] = rnd
+	        end
+	    end
+	    return (matrixAdj .+ matrixAdjDiag, x, y, z)
+	end
+	adjacencyM3D, x, y, z = RRGAdjacencyM3D()
+	
+	function getGraphEdges3D(adjMatrix3D, x, y, z)
+	    xyzos = []
+	    weights = []
+	    for i in eachindex(x), j in i+1:length(x)
+	        if adjMatrix3D[i, j] != 0.0
+	            push!(xyzos, [x[i], y[i], z[i]])
+	            push!(xyzos, [x[j], y[j], z[j]])
+	            push!(weights, adjMatrix3D[i, j])
+	            push!(weights, adjMatrix3D[i, j])
+	        end
+	    end
+	    return (Point3f.(xyzos), Float32.(weights))
+	end
+	
+	function plotGraph3D(adjacencyM3D, x, y, z)
+	    cmap = (:Hiroshige, 0.75)
+	    adjmin = minimum(adjacencyM3D)
+	    adjmax = maximum(adjacencyM3D)
+	    diagValues = diag(adjacencyM3D)
+	    segm, weights = getGraphEdges3D(adjacencyM3D, x, y, z)
+	
+	    fig, ax, pltobj = linesegments(segm; color = weights, colormap = cmap,
+	        linewidth = abs.(weights),
+	        colorrange = (adjmin, adjmax),
+	        figure = (;
+	            resolution = (1200, 800),
+	            fontsize = 24),
+	        axis = (;
+	            type = Axis3,
+	            aspect = (1, 1, 1),
+	            perspectiveness = 0.5))
+	    meshscatter!(ax, x, y, z; color = diagValues,
+	        markersize = abs.(diagValues) ./ 90,
+	        colorrange = (adjmin, adjmax),
+	        colormap = cmap)
+	    Colorbar(fig[1, 2], pltobj, label = "weights", height = Relative(0.5))
+	    colsize!(fig.layout, 1, Aspect(1, 1.0))
+	    fig
+	end
+	with_theme(theme_dark()) do
+	    plotGraph3D(adjacencyM3D, x, y, z)
+	end
+end
+```
+
+### Screen-Space Ambient Occlusion, SSAO
+
+```{julia}
+let
+	Random.seed!(1313)
+	#GLMakie.activate!(ssao=true)
+	#GLMakie.closeall() # close any open screen
+	
+	function ssaom()
+	    positions = [Point3f(x, y, rand()) for x in -7:7 for y in -5:5]
+	    fig = Figure(resolution=(1200, 800))
+	    ssao = Makie.SSAO(radius = 6.0, blur = 3)
+	    ax = LScene(fig[1, 1]; show_axis=false, scenekw=(ssao=ssao,))
+	    ax.scene.ssao.bias[] = 0.025
+	    meshscatter!(ax, positions; marker=Rect3(Point3f(-0.5), Vec3f(1)),
+	        markersize=1, color=norm.(positions),
+	        colormap=Reverse(:tol_light),
+	        ssao=true
+	    )
+	    zoom!(ax.scene, cameracontrols(ax.scene), 0.65)
+	    fig
+	end
+	fig = ssaom()
+end
+```
+
+### SSAO: meshscatter grid
+
+```{julia}
+let
+	x = y = z = 1:10
+	f(x, y, z) = x^2 + y^2 + z^2
+	positions = vec([(i, j, k) for i in x, j in y, k in z])
+	vals = [f(ix, iy, iz) for ix in x, iy in y, iz in z]
+	
+	function ssaomeshscatter()
+	    colormap = :starrynight
+	    fig = Figure(resolution=(1800, 600))
+	    ssao = Makie.SSAO(radius = 6.0, blur = 3)
+	    ax11 = LScene(fig[1, 1]; show_axis=false, scenekw=(ssao=ssao,))
+	    ax11.scene.ssao.bias[] = 0.025
+	    ax12 = LScene(fig[1, 2]; show_axis=false, scenekw=(ssao=ssao,))
+	    ax13 = LScene(fig[1, 3]; show_axis=false, scenekw=(ssao=ssao,))
+	    meshscatter!(ax11, positions, color=vec(vals),
+	        marker=Rect3f(Vec3f(-0.5), Vec3f(1)),
+	        markersize=0.9,
+	        colormap=(colormap, 0.5),
+	        colorrange=(minimum(vals), maximum(vals)),
+	        backlight=4.0f0,
+	        ssao=true,
+	    )
+	    meshscatter!(ax12, positions; color=vec(vals),
+	        marker=Rect3f(Vec3f(-0.5), Vec3f(1)),
+	        markersize=0.9,
+	        colormap,
+	        colorrange=(minimum(vals), maximum(vals)),
+	        ssao=true
+	    )
+	    meshscatter!(ax13, positions; color=vec(vals),
+	        marker=Rect3f(Vec3f(-0.5), Vec3f(1)),
+	        markersize=0.9,
+	        colormap,
+	        colorrange=(minimum(vals), maximum(vals)),
+	        backlight=2.0f0,
+	        ssao=true,
+	        transparency=true
+	    )
+	    zoom!(ax11.scene, cameracontrols(ax11.scene), 1.2)
+	    zoom!(ax12.scene, cameracontrols(ax12.scene), 1.2)
+	    zoom!(ax13.scene, cameracontrols(ax13.scene), 1.2)
+	    fig
+	end
+	with_theme(ssaomeshscatter, theme_dark())
+end
+```
+
+### Gauss-like shapes 2d
+
+```{julia}
+let
+	Random.seed!(13)
+	x = -6:0.5:6
+	y = -6:0.5:6
+	z = 6exp.( -(x.^2 .+ y' .^ 2)./4)
+	
+	box = Rect3(Point3f(-0.5), Vec3f(1))
+	n = 100
+	g(x) = x^(1/10)
+	alphas = [g(x) for x in range(0,1,length=n)]
+	cmap_alpha = GLMakie.resample_cmap(:linear_worb_100_25_c53_n256, n, alpha = alphas)
+	
+	with_theme(theme_dark()) do
+	    fig, ax, = meshscatter(x, y, z;
+	        marker=box,
+	        markersize = 0.5,
+	        color = vec(z),
+	        colormap = cmap_alpha,
+	        colorrange = (0,6),
+	        axis = (;
+	            type = Axis3,
+	            aspect = :data,
+	            azimuth = 7.3,
+	            elevation = 0.189,
+	            perspectiveness = 0.5),
+	        figure = (;
+	            resolution =(1200,800)))
+	    meshscatter!(ax, x .+ 7, y, z./2;
+	        markersize = 0.25,
+	        color = vec(z./2),
+	        colormap = cmap_alpha,
+	        colorrange = (0, 6),
+	        ambient = Vec3f(0.85, 0.85, 0.85),
+	        backlight = 1.5f0)
+	    xlims!(-5.5,10)
+	    ylims!(-5.5,5.5)
+	    hidedecorations!(ax; grid = false)
+	    hidespines!(ax)
+	    fig
+	end
+end
+```
+
+## Volumes
+
+### Volume
+
+```{julia}
+let
+	x = y = z = 1:10
+	f(x, y, z) = x^2 + y^2 + z^2
+	vol = [f(ix, iy, iz) for ix in x, iy in y, iz in z]
+	fig, ax, _ = GLMakie.volume(x, y, z, vol;
+	    colorrange = (minimum(vol), maximum(vol)),
+	    colormap = :Egypt, transparency = true,
+	    figure = (; resolution = (1200, 800)),
+	    axis = (;
+	        type = Axis3,
+	        perspectiveness = 0.5,
+	        azimuth = 2.19,
+	        elevation = 0.57,
+	        aspect = (1, 1, 1)
+	        )
+	    )
+	fig
+end
+```
+
+### Volume contour & scatters
+
+```{julia}
+let
+	x = y = z = -1:0.2:1
+	vol1 = [ix * iy * iz for ix in x, iy in y, iz in z]
+	points3d = [Point3f(ix, iy, iz) for ix in x, iy in y, iz in z];
+	# scale everything to the interval 0,1 (things don't seem to work with colorrange)
+	vol2 = (vol1 .+ 1) ./ 2;
+	# colormap with transparency in the middle
+	cmap = :Hiroshige
+	n = 101
+	g(x) = x^2
+	alphas = [g(x) for x in range(-1, 1, length = n)]
+	cmap_alpha = GLMakie.resample_cmap(cmap, n; alpha = alphas)
+	# the plot
+	fig = Figure(resolution = (1200, 1200))
+	ax1 = Axis3(fig[1, 1], perspectiveness = 0.5, azimuth = 7.19,
+	    elevation = 0.57, aspect = (1, 1, 1))
+	ax2 = Axis3(fig[1, 2], perspectiveness = 0.5, azimuth = 6.62,
+	    elevation = 0.57, aspect = (1, 1, 1))
+	ax3 = Axis3(fig[2, 1], perspectiveness = 0.5, azimuth = 7.38,
+	    elevation = 0.57, aspect = (1, 1, 1))
+	ax4 = Axis3(fig[2, 2], perspectiveness = 0.5, azimuth = 6.64,
+	    elevation = 0.57, aspect = (1, 1, 1))
+	
+	volume!(ax1, x, y, z, vol2; colormap = cmap, transparency = true)
+	contour!(ax2, x, y, z, vol1; colormap = cmap, alpha = 0.05,
+	    levels = [collect(-1:0.01:-0.3)..., collect(0.3:0.01:1)...])
+	meshscatter!(ax3, vec(points3d); color = vec(vol1), colormap = cmap_alpha)
+	meshscatter!(ax4, vec(points3d); color = vec(vol1), colormap = cmap_alpha,
+	    marker = Rect3f(Vec3f(-1), Vec3f(2)))
+	limits!(ax4, -1.2, 1.2, -1.2, 1.2, -1.2, 1.2)
+	fig
+end
+```
+
+## Contour: volume-like, surface-like & 3d lines
+
+### Contour & contour3d
+
+```{julia}
+let
+	function peaks(; n = 49)
+	    x = LinRange(-3, 3, n)
+	    y = LinRange(-3, 3, n)
+	    a = 3 * (1 .- x').^2 .* exp.(-(x'.^2) .- (y .+ 1).^2)
+	    b = 10 * (x' / 5 .- x'.^3 .- y.^5) .* exp.(-x'.^2 .- y.^2)
+	    c = 1 / 3 * exp.(-(x' .+ 1).^2 .- y.^2)
+	    return (x, y, a .- b .- c)
+	end
+	x, y, z = peaks()
+	with_theme(theme_dark()) do
+	    fig = Figure(resolution = (1200,800))
+	    ax1 = Makie.Axis(fig[1,1], aspect = 1)
+	    ax2 = Axis3(fig[1,2]; aspect = (1,1,0.7), perspectiveness = 0.5)
+	    axs = [ax1, ax2]
+	    cmap =  :diverging_bkr_55_10_c35_n256
+	    contourf!(axs[1], x, y, z; levels = 0.1:0.08:0.9, mode = :relative,
+	        colormap = cmap)
+	    # bug, colormap cannot be transparent
+	    contourf!(axs[2], x, y, z; levels = 14, colormap = cmap)
+	    contour3d!(axs[2], x, y, z; levels = 14, colormap = cmap,
+	        transparency = true, linewidth = 5)
+	    limits!(axs[1], -3,3,-3,3)
+	    hidedecorations!.(axs; grid = false)
+	    fig
+	end
+end
+```
+
+### Contour: volume-like
+
+```{julia}
+let
+	x = y = z = 1:10
+	f(x, y, z) = x^2 + y^2 + z^2
+	vol = [f(ix, iy, iz) for ix in x, iy in y, iz in z]
+	fig, ax, _ = contour(x, y, z, vol;
+	    #colorrange = (minimum(vol), maximum(vol)),
+	    levels = 10,
+	    colormap = :Egypt, transparency = true,
+	    figure = (; resolution = (1200, 800)),
+	    axis = (;
+	        type = Axis3,
+	        perspectiveness = 0.5,
+	        azimuth = 2.19,
+	        elevation = 0.57,
+	        aspect = (1, 1, 1)
+	        )
+	    )
+	fig
+end
+```
+
+## Meshes
+
+### Cylinder, Pyramid, Sphere
+
+```{julia}
+let
+	cyl = GeometryBasics.Cylinder(Makie.Point{3, Float64}(1,2,3), Makie.Point{3, Float64}(2,3,4), 1.0)
+	pyr = GeometryBasics.Pyramid(Point3f(0), 1f0, 1f0)
+	rectmesh = Rect3(Point3f(-0.5), Vec3f(1))
+	rectthin = Rect3(Point3f(-1), Vec3f(2,2,0.25))
+	sphere = GeometryBasics.Sphere(Point3f(-0.5), 1)
+	Cone(; quality = 10) = merge([
+	    Makie._circle(Point3f(0), 0.5f0, Vec3f(0,0,-1), quality),
+	    Makie._mantle(Point3f(0), Point3f(0,0,1), 0.5f0, 0f0, quality)])
+	cone = Cone()
+	rectMesh = GeometryBasics.mesh(rectmesh)
+	rectThin = GeometryBasics.mesh(rectthin)
+	cyL = GeometryBasics.mesh(cyl)
+	
+	cmap = GLMakie.resample_cmap(:Spectral_11, length(rectMesh.position))
+	colors1 = [cmap[i] for (i,v) in enumerate(rectMesh.position)]
+	colors2 = [RGBA(rand(4)...) for v in rectThin.position]
+	colors3 = [norm(v) for v in cyL.position]
+	markers = [sphere, rectmesh, cyl, pyr, cone]
+	
+	with_theme(theme_dark()) do
+	    fig = Figure(resolution = (1200,800))
+	    axs = [Axis3(fig[i,j]; aspect = :data, perspectiveness = 0.5)
+	        for j in 1:3, i in 1:2]
+	    mesh!(axs[1], sphere, color = :white)
+	    mesh!(axs[2], rectmesh, color = colors1)
+	    mesh!(axs[3], pyr; color = (:dodgerblue, 0.85))
+	    wireframe!(axs[3], pyr; color = :grey90)
+	    mesh!(axs[4], cyl; color = colors3,
+	        colormap = :diverging_tritanopic_cwr_75_98_c20_n256)
+	    mesh!(axs[5], cone; transparency = true)
+	    wireframe!(axs[5], cone; color = :grey90, linewidth = 0.5)
+	    mesh!(axs[6], rectthin; color = colors2, shading = false)
+	    [meshscatter!(axs[6], Point3f(1.5rand(3) .- 0.5); marker = markers[i],
+	        markersize = 0.25) for i in 1:5]
+	    fig
+	end
+end
+```
+
+### Earth and planes
+
+```{julia}
+let
+	link = "https://www.solarsystemscope.com/textures/download/8k_earth_daymap.jpg"
+	earth_img = load(Downloads.download(link))
+	function SphereTess(; o=Point3f(0), r=1, tess=64)
+	    return uv_normal_mesh(Tesselation(Sphere(o, r), tess))
+	end
+	
+	function ssaoplanes()
+	    fig = Figure()
+	    ssao = Makie.SSAO(radius = 5.0, blur = 3)
+	    ax = LScene(fig[1, 1]; show_axis=false, scenekw=(ssao=ssao,))
+	    ax.scene.ssao.bias[] = 0.025
+	    mesh!(ax, SphereTess(; o=Point3f(0.1, 0, 0), r=0.95);
+	        color=circshift(earth_img, (0, 3000)), ssao=true)
+	    # box
+	    mesh!(ax, Rect3(Vec3f(-1, -1, -1.1), Vec3f(2, 2, 0.1));
+	        color=RGB(0.082, 0.643, 0.918), ssao=true)
+	    mesh!(ax, Rect3(Vec3f(-1, -1.1, -1.1), Vec3f(2, 0.1, 2.1));
+	        color=RGB(0.929, 0.773, 0.0), ssao=true)
+	    mesh!(ax, Rect3(Vec3f(-1, -1, -1.0), Vec3f(0.1, 2, 2.0));
+	        color=RGB(0.91, 0.122, 0.361),
+	        ssao=true)
+	    fig
+	end
+	fig = with_theme(ssaoplanes, theme_dark())
+end
+```
+
+### How to Cube
+
+#### Simple cubed mesh
+
+```{julia}
+let
+	mr = Rect3f(Vec3f(-0.5), Vec3f(1))
+	
+	fig, ax, obj = mesh(mr; color = :white, transparency=true,
+	    figure = (; resolution = (1200,600)))
+	wireframe!(ax, mr; color = :black, transparency=true)
+	mesh(fig[1,2], mr; color = [v[3] for v in coordinates(mr)],
+	    colormap = :Spectral_11)
+	fig
+end
+```
+
+#### A matrix (image) as colors
+
+```{julia}
+let
+	mr = Rect3f(Vec3f(-0.5), Vec3f(1))
+	img = testimage("chelsea")
+	fig, ax, obj = mesh(mr; color =rand(10,10), interpolate=false,
+	    colormap = :seaborn_icefire_gradient,
+	    figure = (; resolution = (1200,600)))
+	mesh(fig[1,2], mr; color = img, interpolate=false)
+	fig
+end
+```
+
+#### Wrap individual colors around mesh
+
+```{julia}
+let
+	function meshcube(o=Vec3f(0), sizexyz = Vec3f(1))
+	    uvs = map(v -> v ./ (3, 2), Vec2f[
+	    (0, 0), (0, 1), (1, 1), (1, 0),
+	    (1, 0), (1, 1), (2, 1), (2, 0),
+	    (2, 0), (2, 1), (3, 1), (3, 0),
+	    (0, 1), (0, 2), (1, 2), (1, 1),
+	    (1, 1), (1, 2), (2, 2), (2, 1),
+	    (2, 1), (2, 2), (3, 2), (3, 1),
+	    ])
+	    m = normal_mesh(Rect3f(Vec3f(-0.5) .+ o, sizexyz))
+	    m = GeometryBasics.Mesh(GeometryBasics.meta(coordinates(m);
+	        uv = uvs, normals = normals(m)), faces(m))
+	end
+	m = meshcube();
+	
+	# +z, +x, +y,
+	# -x, -y, -z
+	img = rand(RGBf, 2, 3)
+	fig, ax, obj = mesh(m; color = img, interpolate=false,
+	    figure = (; resolution = (1200,600)))
+	mesh(fig[1,2], m; color = img)
+	fig
+end
+```
+
+#### Individual images per face
+
+```{julia}
+let
+	function meshcube(o=Vec3f(0), sizexyz = Vec3f(1))
+	    uvs = map(v -> v ./ (3, 2), Vec2f[
+	    (0, 0), (0, 1), (1, 1), (1, 0),
+	    (1, 0), (1, 1), (2, 1), (2, 0),
+	    (2, 0), (2, 1), (3, 1), (3, 0),
+	    (0, 1), (0, 2), (1, 2), (1, 1),
+	    (1, 1), (1, 2), (2, 2), (2, 1),
+	    (2, 1), (2, 2), (3, 2), (3, 1),
+	    ])
+	    m = normal_mesh(Rect3f(Vec3f(-0.5) .+ o, sizexyz))
+	    m = GeometryBasics.Mesh(GeometryBasics.meta(coordinates(m);
+	        uv = uvs, normals = normals(m)), faces(m))
+	end
+	m = meshcube();
+	timgs = ["bark_512", "bark_he_512", "brick_wall_he_512",
+	    "woolen_cloth_he_512", "wood_grain_he_512", "straw_he_512"];
+	
+	
+	fig = Figure(figure_padding=0, resolution =(600,400))
+	axs = [Makie.Axis(fig[i,j], aspect=1) for i in 1:2 for j in 1:3]
+	[heatmap!(axs[i], testimage(timgs[i])) for i in 1:6]
+	hidedecorations!.(axs)
+	hidespines!.(axs)
+	colgap!(fig.layout,0)
+	rowgap!(fig.layout,0)
+	imgOut = Makie.colorbuffer(fig.scene)
+	
+	mesh(m; color = imgOut, interpolate=false)
+end
+```
+
+### Cube: Cyberpunk style
+
+#### Download images from twitter
+
+```{julia}
+let
+	lucy = Downloads.download("https://pbs.twimg.com/media/FbbZqWTXkAA8KTo?format=jpg&name=large")
+	lucy = load(lucy)
+	lucy = lucy[1:1000,1:1000]
+	
+	david = Downloads.download("https://pbs.twimg.com/media/FdGmKklXEAAkdG1?format=jpg&name=large")
+	david = load(david)
+	david = david[1:1000,1:1000]
+	
+	faraday = Downloads.download("https://pbs.twimg.com/media/Fdq1ev-X0AM-tXv?format=jpg&name=large")
+	faraday = load(faraday)
+	faraday = faraday[1:1000,1:1000]
+	
+	lucydavid = Downloads.download("https://pbs.twimg.com/media/FdAs55qXoAAyG9l?format=jpg&name=large")
+	lucydavid = load(lucydavid)
+	
+	luda = Downloads.download("https://pbs.twimg.com/media/Fcs-pGSX0AIdzWs?format=jpg&name=large")
+	luda = load(luda)
+	luda = luda[201-40:1240,end:-1:1]
+	
+	poster = Downloads.download("https://pbs.twimg.com/media/FZFjXDAWIAE-vAT?format=jpg&name=large")
+	poster = load(poster)
+	poster = poster[1+80:1080+80,end:-1:1]
+end
+```
+
+#### Set images into the right (your) order
+
+```{julia}
+let
+	lucy = Downloads.download("https://pbs.twimg.com/media/FbbZqWTXkAA8KTo?format=jpg&name=large")
+	lucy = load(lucy)
+	lucy = lucy[1:1000,1:1000]
+
+	lucydavid = Downloads.download("https://pbs.twimg.com/media/FdAs55qXoAAyG9l?format=jpg&name=large")
+	lucydavid = load(lucydavid)
+
+	david = Downloads.download("https://pbs.twimg.com/media/FdGmKklXEAAkdG1?format=jpg&name=large")
+	david = load(david)
+	david = david[1:1000,1:1000]
+
+	faraday = Downloads.download("https://pbs.twimg.com/media/Fdq1ev-X0AM-tXv?format=jpg&name=large")
+	faraday = load(faraday)
+	faraday = faraday[1:1000,1:1000]
+	
+	poster = Downloads.download("https://pbs.twimg.com/media/FZFjXDAWIAE-vAT?format=jpg&name=large")
+	poster = load(poster)
+	poster = poster[1+80:1080+80,end:-1:1]
+	
+	luda = Downloads.download("https://pbs.twimg.com/media/Fcs-pGSX0AIdzWs?format=jpg&name=large")
+	luda = load(luda)
+	luda = luda[201-40:1240,end:-1:1]
+
+	imgs = [rotr90(lucydavid), lucy, rotl90(david),
+	    rotr90(faraday), rotr90(rotr90(poster)), rotr90(rotr90(luda))]
+
+	fig = Figure(figure_padding=0, resolution =(600*4,400*4))
+	axs = [Makie.Axis(fig[i,j], aspect=1) for i in 1:2 for j in 1:3]
+	[heatmap!(axs[i], imgs[i]) for i in 1:6]
+	hidedecorations!.(axs)
+	hidespines!.(axs)
+	colgap!(fig.layout,0)
+	rowgap!(fig.layout,0)
+	imgcpunk = Makie.colorbuffer(fig.scene)
+end
+```
+
+#### Do the meshed cube
+
+```{julia}
+let
+	function meshcube(o=Vec3f(0), sizexyz = Vec3f(1))
+	    uvs = map(v -> v ./ (3, 2), Vec2f[
+	    (0, 0), (0, 1), (1, 1), (1, 0),
+	    (1, 0), (1, 1), (2, 1), (2, 0),
+	    (2, 0), (2, 1), (3, 1), (3, 0),
+	    (0, 1), (0, 2), (1, 2), (1, 1),
+	    (1, 1), (1, 2), (2, 2), (2, 1),
+	    (2, 1), (2, 2), (3, 2), (3, 1),
+	    ])
+	    m = normal_mesh(Rect3f(Vec3f(-0.5) .+ o, sizexyz))
+	    m = GeometryBasics.Mesh(GeometryBasics.meta(coordinates(m);
+	        uv = uvs, normals = normals(m)), faces(m))
+	end
+	
+	m = meshcube();
+
+	function getstats()
+	    r = HTTP.get("https://myanimelist.net/anime/42310/Cyberpunk__Edgerunners/stats")
+	    h = Gumbo.parsehtml(String(r.body))
+	    helm_table = eachmatch(Selector(".score-stats"), h.root)
+	
+	    htxt = helm_table[1].children[1]
+	    rating = Float32[]
+	    votes = Float32[]
+	    for child in htxt.children
+	        ele = eachmatch(Selector("td"), child)
+	        echild = ele[1].children
+	        push!(rating, parse(Float32, echild[1].text))
+	        ediv = ele[2].children[1]
+	        push!(votes, parse(Float32, split(ediv.children[2][2][1].text)[1][2:end]))
+	        #parse(Float32, strip(split(ediv.children[2][1].text, "%")[1]))
+	    end
+	    return (rating, votes)
+	end
+	
+	cmap_cpunk = ["#5479B8", "#CD38D1", "#8295A6", "#9EA4A4","#03B0F5",
+	    "#2BDB52", "#BACBCF", "#F1F016", "#EEF9E4", "#FAF4FD"]
+	
+	rating, votes = getstats()
+	percent = round.(votes/sum(votes)*100, digits=1)
+
+	with_theme(theme_black()) do
+	    fig = Figure(resolution= (1200,700), fontsize = 24)
+		#imgcpunk = Makie.colorbuffer(fig.scene)
+	    ax1 = LScene(fig[1,1], show_axis=false)
+	    ax2 = Makie.Axis(fig[1,2]; xlabel = "Rating score")
+	    mesh!(ax1, m; 
+			#color = imgcpunk, 
+			interpolate=false)
+	    barplot!(ax2, rating, votes; color =reverse(cmap_cpunk))
+	    text!(ax2, string.(percent).*"%", position = Point2f.(rating, votes),
+	        align = (:center, :bottom))
+	    text!(ax2, "Total votes: $(sum(votes))", color=cmap_cpunk[8],
+	        position = (1, 3maximum(votes)/4), fontsize= 28)
+	    hideydecorations!(ax2; grid=false)
+	    hidespines!(ax2, :l, :t, :r)
+	    ax2.xticks = 1:10
+	    Makie.Label(fig[2,1], "Source: https://www.cyberpunk.net/en/edgerunners\nImages: https://twitter.com/edgerunners",
+	        fontsize = 14, tellwidth=false, halign=:left, color = cmap_cpunk[9])
+	    Makie.Label(fig[2,2], "Stats: https://myanimelist.net/anime/42310/Cyberpunk__Edgerunners/stats",
+	        fontsize = 14, tellwidth=false, halign=:right, color = cmap_cpunk[9])
+	    colgap!(fig.layout,1)
+	    fig
+	end
+end
+```
+
+### Simplex in 3D with arrows
+
+```{julia}
+let
+	vertices = [
+	    0 0 0
+	    1 0 0
+	    0 1 0
+	    0 0 1
+	    ]
+	faces = [
+	    3 2 1
+	    4 1 2
+	    4 3 1
+	    4 2 3
+	    ]
+	# m = GLMakie.GeometryBasics.Mesh(GLMakie.Makie.to_vertices(vertices), GLMakie.Makie.to_triangles(faces))
+	# mesh(m)
+	
+	marker = Sphere(Point3f(0), 1) # 0 -> -0.5, fully inside, 0 -> 0.5 fully outside
+	
+	fig = Figure(resolution = (600,600))
+	ax = LScene(fig[1,1], show_axis=false)
+	m = mesh!(ax, vertices, faces; color = :white, transparency=true,)
+	poly!(ax, vertices, faces; color = :transparent,
+	    transparency=true, strokewidth = 1.0)
+	meshscatter!(ax,
+	    Point3f(1/3, 1/3,1/3),  # you need to calculate this for your use case
+	    marker = marker, markersize = 0.025, transparency=true)
+	# the following are not over the plane nither perpendicular.
+	arrows!(ax,
+	    [Point3f(1/3, 1/3,1/3)],  # you need to calculate this for your use case
+	    [Point3f(0.2, 0.1,0.3)],  # you need to calculate this for your use case
+	    arrowsize = Vec3f(0.05, 0.05, 0.08),
+	    color = :red,
+	    arrowcolor = :black)
+	arrows!(ax,
+	    [Point3f(1/3, 1/3,1/3)],  # you need to calculate this for your use case
+	    [Point3f(-0.1, -0.1,0.3)],  # you need to calculate this for your use case
+	    arrowsize = Vec3f(0.08, 0.08, 0.08),
+	    linewidth = 0.02,
+	    color = :dodgerblue,
+	    arrowcolor = :orange)
+	zoom!(ax.scene, cameracontrols(ax.scene), 0.9)
+	Makie.rotate!(ax.scene, -0.1)
+	fig
+end
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
