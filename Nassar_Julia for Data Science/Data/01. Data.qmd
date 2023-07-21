@@ -1,0 +1,446 @@
+---
+title: "Plots Demo"
+author: "Norah Jones"
+date: "5/22/2021"
+format:
+  html:
+    code-fold: true
+jupyter: julia-1.8
+---
+
+## Data
+Being able to easily load and process data is a crucial task that can make any data science more pleasant. In this notebook, we will cover most common types often encountered in data science tasks, and we will be using this data throughout the rest of this tutorial.
+
+https://juliaacademy.com/courses/937702/lectures/17339299
+
+https://www.youtube.com/watch?v=iG1dZBaxS-U
+
+https://www.youtube.com/watch?v=iG1dZBaxS-U&list=PLP8iPy9hna6QuDTt11Xxonnfal91JhqjO&index=2
+
+https://github.com/JuliaAcademy/DataScience/blob/master/01.%20Data.ipynb
+
+```{julia}
+using BenchmarkTools
+using DataFrames
+using DelimitedFiles
+using CSV
+using XLSX
+```
+
+# 🗃️ Get some data
+In Julia, it's pretty easy to dowload a file from the web using the `download` function. But also, you can use your favorite command line commad to download files by easily switching from Julia via the `;` key. Let's try both.
+
+Note: `download` depends on external tools such as curl, wget or fetch. So you must have one of these.
+
+```{julia}
+#?download
+```
+
+```{julia}
+P = Base.download("https://raw.githubusercontent.com/nassarhuda/easy_data/master/programming_languages.csv",
+    "programminglanguages.csv")
+```
+
+Another way would be to use a shell command to get the same file.
+
+```{julia}
+# ;wget "https://raw.githubusercontent.com/nassarhuda/easy_data/master/programming_languages.csv"
+```
+
+# 📂 Read your data from text files.
+The key question here is to load data from files such as `csv` files, `xlsx` files, or just raw text files. We will go over some Julia packages that will allow us to read such files very easily.
+
+Let's start with the package `DelimitedFiles` which is in the standard library.
+
+```{julia}
+#head programminglanguages.csv
+```
+
+```{julia}
+#=
+readdlm(source, 
+    delim::AbstractChar, 
+    T::Type, 
+    eol::AbstractChar; 
+    header=false, 
+    skipstart=0, 
+    skipblanks=true, 
+    use_mmap, 
+    quotes=true, 
+    dims, 
+    comments=false, 
+    comment_char='#')
+=#
+P,H = DelimitedFiles.readdlm(P,','; header = true)
+#P,H = readdlm("programming_languages.csv",',';header=true);
+```
+
+```{julia}
+H
+P
+Base.@show Base.typeof(P)
+P[1:10,:]
+```
+
+To write to a text file, you can:
+
+```{julia}
+DelimitedFiles.writedlm("programminglanguages_dlm.txt", P, '-')
+```
+
+A more powerful package to use here is the `CSV` package. By default, the CSV package imports the data to a DataFrame, which can have several advantages as we will see below.
+
+In general,[`CSV.jl`](https://juliadata.github.io/CSV.jl/stable/) is the recommended way to load CSVs in Julia. Only use `DelimitedFlies` when you have a more complicated file where you want to specify several things.
+
+```{julia}
+C = CSV.read("programminglanguages.csv", DataFrames.DataFrame)
+```
+
+```{julia}
+CSV.@show Base.typeof(C)
+C[1:10,:]
+# C.year #[!,:year]
+```
+
+```{julia}
+CSV.@show typeof(P)
+P[1:10,:]
+```
+
+```{julia}
+Base.names(C)
+```
+
+```{julia}
+C.year
+C[!,:year]
+C.language
+DataFrames.describe(C)
+```
+
+To write to a *.csv file using the CSV package
+
+```{julia}
+CSV.write("programminglanguages_CSV.csv",DataFrames.DataFrame(P,:auto))
+```
+
+Compare performance
+
+```{julia}
+BenchmarkTools.@btime P,H = DelimitedFiles.readdlm("programminglanguages.csv",',';header=true)
+BenchmarkTools.@btime C = CSV.read("programminglanguages.csv", DataFrames.DataFrame)
+```
+
+```{julia}
+# To write to a *.csv file using the CSV package
+CSV.write("programminglanguages_CSV.csv",DataFrame(P,:auto))
+```
+
+Another type of files that we may often need to read is `XLSX` files. Let's try to read a new file.
+
+```{julia}
+T = XLSX.readdata("zillow_data_download_april2020.xlsx", #file name
+    "Sale_counts_city", #sheet name
+    "A1:F9" #cell range
+    )
+```
+
+If you don't want to specify cell ranges... though this will take a little longer...
+
+```{julia}
+G = XLSX.readtable("data/zillow_data_download_april2020.xlsx",
+    "Sale_counts_city")
+```
+
+Here, `G` is a tuple of two items. The first is an vector of vectors where each vector corresponds to a column in the excel file. And the second is the header with the column names.
+
+```{julia}
+G[1]
+```
+
+```{julia}
+G[1][1][1:10]
+```
+
+```{julia}
+G[2][1:10]
+```
+
+And we can easily store this data in a DataFrame. `DataFrame(G...)` uses the "splat" operator to _unwrap_ these arrays and pass them to the DataFrame constructor.
+
+```{julia}
+D = DataFrames.DataFrame(G...) # equivalent to DataFrame(G[1],G[2])
+```
+
+```{julia}
+foods = ["apple", "cucumber", "tomato", "banana"]
+calories = [105,47,22,105]
+prices = [0.85,1.6,0.8,0.6,]
+dataframe_calories = DataFrames.DataFrame(item=foods,calories=calories)
+dataframe_prices = DataFrames.DataFrame(item=foods,price=prices)
+```
+
+```{julia}
+#DF = innerjoin(dataframe_calories,dataframe_prices,on=:item)
+```
+
+```{julia}
+# we can also use the DataFrame constructor on a Matrix
+D = DataFrames.DataFrame(T) # equivalent to DataFrame(G[1],G[2])
+```
+
+You can also easily write data to an XLSX file
+
+```{julia}
+# if you already have a dataframe: 
+# XLSX.writetable("filename.xlsx", collect(DataFrames.eachcol(df)), DataFrames.names(df))
+#XLSX.writetable("..writefile_using_XLSX.xlsx",G[1],G[2])
+```
+
+## ⬇️ Importing your data
+
+Often, the data you want to import is not stored in plain text, and you might want to import different kinds of types. Here we will go over importing `jld`, `npz`, `rda`, and `mat` files. Hopefully, these four will capture the types from four common programming languages used in Data Science (Julia, Python, R, Matlab).
+
+We will use a toy example here of a very small matrix. But the same syntax will hold for bigger files.
+
+```
+4×5 Array{Int64,2}:
+ 2  1446  1705  1795  1890
+ 3  2926  3121  3220  3405
+ 4  2910  3022  2937  3224
+ 5  1479  1529  1582  1761
+ ```
+
+```{julia}
+using JLD
+jld_data = JLD.load("data/mytempdata.jld")
+JLD.save("mywrite.jld", "A", jld_data)
+```
+
+```{julia}
+using NPZ
+npz_data = NPZ.npzread("data/mytempdata.npz")
+NPZ.npzwrite("mywrite.npz", npz_data)
+```
+
+```{julia}
+using RData
+R_data = RData.load("data/mytempdata.rda")
+# We'll need RCall to save here. https://github.com/JuliaData/RData.jl/issues/56
+using RCall
+RCall.@rput R_data
+RCall.R"
+    save(R_data, file=\"mywrite.rda\")
+    "
+```
+
+```{julia}
+using MAT
+Matlab_data = MAT.matread("data/mytempdata.mat")
+MAT.matwrite("mywrite.mat",Matlab_data)
+```
+
+```{julia}
+Base.@show typeof(jld_data)
+Base.@show typeof(npz_data)
+Base.@show typeof(R_data)
+Base.@show typeof(Matlab_data)
+```
+
+```{julia}
+Matlab_data
+```
+
+# 🔢 Time to process the data from Julia
+We will mainly cover `Matrix` (or `Vector`), `DataFrame`s, and `dict`s (or dictionaries). Let's bring back our progrmming languages dataset and start playing it the matrix it's stored in.
+
+```{julia}
+P
+```
+
+Here are some quick questions we might want to ask about this simple data.
+- Which year was was a given language invented?
+- How many languages were created in a given year?
+
+```{julia}
+# Q1: Which year was was a given language invented?
+function year_created(P,language::String)
+    loc = DataFrames.findfirst(P[:,2] .== language)
+    return P[loc,1]
+end
+year_created(P,"Julia")
+```
+
+```{julia}
+year_created(P,"W")
+```
+
+```{julia}
+function year_created_handle_error(P,language::String)
+    loc = DataFrames.findfirst(P[:,2] .== language)
+    !Base.isnothing(loc) && return P[loc,1]
+    Base.error("Error: Language not found.")
+end
+year_created_handle_error(P,"W")
+```
+
+```{julia}
+# Q2: How many languages were created in a given year?
+function how_many_per_year(P,year::Int64)
+    year_count = Base.length(Base.findall(P[:,1].==year))
+    return year_count
+end
+how_many_per_year(P,2011)
+```
+
+Now let's try to store this data in a DataFrame...
+
+```{julia}
+P_df = C #DataFrame(year = P[:,1], language = P[:,2]) # or DataFrame(P)
+```
+
+```{julia}
+# Even better, since we know the types of each column, we can create the DataFrame as follows:
+# P_df = DataFrame(year = Int.(P[:,1]), language = string.(P[:,2]))
+```
+
+And now let's answer the same questions we just answered...
+
+```{julia}
+# Q1: Which year was was a given language invented?
+# it's a little more intuitive and you don't need to remember the column ids
+function year_created(P_df,language::String)
+    loc = Base.findfirst(P_df.language .== language)
+    return P_df.year[loc]
+end
+year_created(P_df,"Julia")
+```
+
+```{julia}
+year_created(P_df,"W")
+```
+
+```{julia}
+function year_created_handle_error(P_df,language::String)
+    loc = DataFrames.findfirst(P_df.language .== language)
+    !Base.isnothing(loc) && return P_df.year[loc]
+    Base.error("Error: Language not found.")
+end
+year_created_handle_error(P_df,"W")
+```
+
+```{julia}
+# Q2: How many languages were created in a given year?
+function how_many_per_year(P_df,year::Int64)
+    year_count = Base.length(Base.findall(P_df.year.==year))
+    return year_count
+end
+how_many_per_year(P_df,2011)
+```
+
+Next, we'll use dictionaries. A quick way to create a dictionary is with the `Dict()` command. But this creates a dictionary without types. Here, we will specify the types of this dictionary.
+
+```{julia}
+# A quick example to show how to build a dictionary
+Base.Dict([("A", 1), ("B", 2),(1,[1,2])])
+```
+
+```{julia}
+P_dictionary = Base.Dict{Integer,Vector{String}}()
+```
+
+```{julia}
+#P_dictionary[67] = ["julia","programming"]
+```
+
+```{julia}
+# this is not gonna work.
+P_dictionary["julia"] = 7
+```
+
+Now, let's populate the dictionary with years as keys and vectors that hold all the programming languages created in each year as their values. Even though this looks like more work, we often need to do it just once.
+
+```{julia}
+dict = Base.Dict{Integer,Vector{String}}()
+for i = 1:Base.size(P,1)
+    year,lang = P[i,:]
+    if year in Base.keys(dict)
+        dict[year] = Base.push!(dict[year],lang)
+        # note that push! is not our favorite thing do in Julia,
+        # but we're focusing on correctness rather than speed here
+    else
+        dict[year] = [lang]
+    end
+end
+```
+
+```{julia}
+# Though a smarter way to do this is:
+curyear = P_df.year[1]
+P_dictionary[curyear] = [P_df.language[1]]
+for (i,nextyear) in Base.enumerate(P_df.year[2:end])
+    if nextyear == local curyear
+    #    same key
+        P_dictionary[curyear] = push!(P_dictionary[curyear],P_df.language[i+1])
+        # note that push! is not our favorite thing do in Julia,
+        # but we're focusing on correctness rather than speed here
+    else
+        local curyear = nextyear
+        P_dictionary[curyear] = [P_df.language[i+1]]
+    end
+end
+```
+
+```{julia}
+Base.length(Base.keys(P_dictionary))
+```
+
+```{julia}
+Base.length(Base.unique(P[:,1]))
+```
+
+```{julia}
+# Q1: Which year was was a given language invented?
+# now instead of looking in one long vector, we will look in many small vectors
+function year_created(P_dictionary,language::String)
+    keys_vec = Base.collect(Base.keys(P_dictionary))
+    lookup = Base.map(keyid -> Base.findfirst(P_dictionary[keyid].==language),keys_vec)
+    # now the lookup vector has `nothing` or a numeric value. We want to find the index of the numeric value.
+    return keys_vec[Base.findfirst((!isnothing).(lookup))]
+end
+year_created(P_dictionary,"Julia")
+```
+
+```{julia}
+# Q2: How many languages were created in a given year?
+how_many_per_year(P_dictionary,year::Int64) = Base.length(P_dictionary[year])
+how_many_per_year(P_dictionary,2011)
+```
+
+# 📝 A note about missing data
+
+```{julia}
+# assume there were missing values in our dataframe
+P[1,1] = missing
+P_df = DataFrames.DataFrame(year = P[:,1], language = P[:,2])
+```
+
+```{julia}
+DataFrames.dropmissing(P_df)
+```
+
+# Finally...
+After finishing this notebook, you should be able to:
+- [ ] dowload a data file from the web given a url
+- [ ] load data from a file from a text file via DelimitedFiles or CSV
+- [ ] write your data to a text file or csv file
+- [ ] load data from file types xlsx, jld, npz, mat, rda
+- [ ] write your data to an xlsx file, jld, npz, mat, rda
+- [ ] store data in a 2D array (`Matrix`), or `DataFrame` or `Dict`
+- [ ] write functions to perform basic lookups on `Matrix`, `DataFrame`, and `Dict` types
+- [ ] use some of the basic functions on `DataFrame`s such as: `dropmissing`, `describe`, `by`, and `join`
+
+# 🥳 One cool finding
+
+Julia was created in 2012
+

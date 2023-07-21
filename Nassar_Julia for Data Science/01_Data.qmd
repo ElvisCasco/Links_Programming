@@ -1,0 +1,235 @@
+---
+title: 'Julia for Data Science'
+author: Huda Nassar
+execute:
+  echo: false
+# format: 
+#   html:
+#     toc: true
+format: 
+  pdf:
+    toc: true
+    warnings: false
+    fig-width: 5
+    fig-height: 3
+keep-ipynb: true
+lang: es
+jupyter: julia-1.9
+---
+
+Libros para descargar (5 diarios)
+
+- https://b-ok.lat/dl/3685042/c217ab?dsource=recommend
+- https://www.universitygames.com/instructions
+
+Introduction to Computational Thinking
+
+- https://github.com/mitmath/6S083
+- https://github.com/nassarhuda/PyDataChi2016
+- https://www.youtube.com/watch?v=I6cfml5VLRg   # Data Analysis of Coronavirus Outbreak
+- http://jcharistech-institute.thinkific.com/courses/take/learn-julia-programming-fundamentals-of-julia-lang/lessons/5081064-strings-characters
+- https://riptutorial.com/julia-lang/awesome-learning/youtube
+- www.github.com/nassarhuda/JuliaTutorials/blob/master/TSNE/TSNE.ipynb
+- https://vega.github.io/vega-lite/
+
+Intro to Julia
+
+- https://www.youtube.com/watch?v=8mZRIRHAZfo&list=PLP8iPy9hna6RcodntjrZmz7rjL-gVXl_K&index=13&app=desktop
+
+Julia for Data Science by Huda Nassar
+
+VIDEO 1: DATA
+
+https://juliaacademy.com/courses/937702/lectures/17339299
+https://www.youtube.com/watch?v=iG1dZBaxS-U
+https://www.youtube.com/watch?v=iG1dZBaxS-U&list=PLP8iPy9hna6QuDTt11Xxonnfal91JhqjO&index=2
+https://github.com/JuliaAcademy/DataScience/blob/master/01.%20Data.ipynb
+
+
+
+```{julia}
+wd = @__DIR__ 
+wd = wd * "/"
+using BenchmarkTools, CSV, DataFrames, DelimitedFiles, XLSX
+```
+
+Get some Data, using download
+
+? download # digitar en REPL
+
+```{julia}
+P = Base.download("https://raw.githubusercontent.com/nassarhuda/easy_Data/master/programming_languages.csv",
+    wd * "Data/programminglanguages.csv")
+P,H = DelimitedFiles.readdlm(P,','; header = true)
+println(H)
+println(P)
+Base.@show Base.typeof(P)
+P[1:10,:]
+```
+
+To write to a text file, you can:
+
+```{julia}
+DelimitedFiles.writedlm(
+    wd * "Data/programminglanguages_dlm.txt",
+    P,
+    '-')
+```
+
+Read csv File
+
+```{julia}
+C = CSV.read(
+    wd * "Data/programminglanguages.csv",
+    DataFrames.DataFrame)
+CSV.@show Base.typeof(C)
+C[1:10,:]
+```
+
+```{julia}
+Base.names(C)
+```
+
+How to call a column from a DataFrame
+
+```{julia}
+C.year
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```
+
+
+
+```{julia}
+
+```

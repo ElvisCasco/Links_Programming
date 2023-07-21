@@ -1,0 +1,599 @@
+---
+jupyter: python3
+---
+
+## Running on Google Colab
+1. Work on a copy of this notebook: _File_ > _Save a copy in Drive_ (you will need a Google account). Alternatively, you can download the notebook using _File_ > _Download .ipynb_, then upload it to [Colab](https://colab.research.google.com/).
+2. Execute the following cell (click on it and press Ctrl+Enter) to install Julia, IJulia (the Jupyter kernel for Julia) and other packages. You can update `JULIA_VERSION` and the other parameters, if you know what you're doing. Installation takes 2-3 minutes.
+3. Reload this page (press Ctrl+R, or ⌘+R, or the F5 key) and continue to the _Checking the Installation_ section.
+
+* _Note_: If your Colab Runtime gets reset (e.g., due to inactivity), repeat steps 2 and 3.
+
+```{python}
+#| id: 38R7JTNrrRF_
+#| colab: {base_uri: 'https://localhost:8080/'}
+#| id: 38R7JTNrrRF_
+#| outputId: 6118402b-80e5-4d9d-fd86-1993b8f929bd
+#| executionInfo: {status: ok, timestamp: 1644699158036, user_tz: 360, elapsed: 195318, user: {displayName: elvis casco bonilla, photoUrl: 'https://lh3.googleusercontent.com/a/default-user=s64', userId: '10858429851944769276'}}
+%%shell
+set -e
+
+#---------------------------------------------------#
+JULIA_VERSION="1.7.2" # any version ≥ 0.7.0
+JULIA_PACKAGES="IJulia BenchmarkTools PyCall PyPlot LinearAlgebra"
+JULIA_PACKAGES_IF_GPU="CUDA"
+JULIA_NUM_THREADS=4
+#---------------------------------------------------#
+
+if [ -n "$COLAB_GPU" ] && [ -z `which julia` ]; then
+  # Install Julia
+  JULIA_VER=`cut -d '.' -f -2 <<< "$JULIA_VERSION"`
+  echo "Installing Julia $JULIA_VERSION on the current Colab Runtime..."
+  BASE_URL="https://julialang-s3.julialang.org/bin/linux/x64"
+  URL="$BASE_URL/$JULIA_VER/julia-$JULIA_VERSION-linux-x86_64.tar.gz"
+  wget -nv $URL -O /tmp/julia.tar.gz # -nv means "not verbose"
+  tar -x -f /tmp/julia.tar.gz -C /usr/local --strip-components 1
+  rm /tmp/julia.tar.gz
+
+  # Install Packages
+  if [ "$COLAB_GPU" = "1" ]; then
+      JULIA_PACKAGES="$JULIA_PACKAGES $JULIA_PACKAGES_IF_GPU"
+  fi
+  for PKG in `echo $JULIA_PACKAGES`; do
+    echo "Installing Julia package $PKG..."
+    julia -e 'using Pkg; pkg"add '$PKG'; precompile;"' &> /dev/null
+  done
+
+  # Install kernel and rename it to "julia"
+  echo "Installing IJulia kernel..."
+  julia -e 'using IJulia; IJulia.installkernel("julia", env=Dict(
+      "JULIA_NUM_THREADS"=>"'"$JULIA_NUM_THREADS"'"))'
+  KERNEL_DIR=`julia -e "using IJulia; print(IJulia.kerneldir())"`
+  KERNEL_NAME=`ls -d "$KERNEL_DIR"/julia*`
+  mv -f $KERNEL_NAME "$KERNEL_DIR"/julia  
+
+  echo ''
+  echo "Successfully installed `julia -v`!"
+  echo "Please reload this page (press Ctrl+R, ⌘+R, or the F5 key) then"
+  echo "jump to the 'Checking the Installation' section."
+fi
+```
+
+## Linear Algebra
+A lot of the Data Science methods we will see in this tutorial require some understanding of linear algebra, and in this notebook we will focus on how Julia handles matrices, the types that exist, and how to call basic linear algebra tasks.
+
+https://juliaacademy.com/courses/937702/lectures/17339511
+
+https://www.youtube.com/watch?v=bndXPsRHPg0&t=10s
+
+https://www.youtube.com/watch?v=bndXPsRHPg0&list=PLP8iPy9hna6QuDTt11Xxonnfal91JhqjO&index=3
+
+https://github.com/JuliaAcademy/DataScience/blob/master/02.%20Linear%20Algebra.ipynb
+
+```{python}
+#| id: 2RjfeiTErPJr
+#| id: 2RjfeiTErPJr
+#| executionInfo: {status: error, timestamp: 1644698933603, user_tz: 360, elapsed: 14, user: {displayName: elvis casco bonilla, photoUrl: 'https://lh3.googleusercontent.com/a/default-user=s64', userId: '10858429851944769276'}}
+#| outputId: cb14ea19-48ac-41db-d92f-d4cd00b95c74
+#| colab: {base_uri: 'https://localhost:8080/', height: 130}
+#Pkg.add("LinearAlgebra")
+#Pkg.add("SparseArrays")
+#Pkg.add("Images")
+#Pkg.add("MAT")
+# some packages we will use
+using LinearAlgebra
+using SparseArrays
+using Images
+using MAT
+```
+
+![title](data/matrix_storage.png)
+### 🟢Getting started
+
+We will get started with creating a random matrix.
+
+```{python}
+#| id: NTPW3jUdrPJu
+#| id: NTPW3jUdrPJu
+A = rand(10,10); # created a random matrix of size 10-by-10
+Atranspose = A' # matrix transpose
+A = A*Atranspose; # matrix multiplication
+```
+
+```{python}
+#| id: tuyEgLrZrPJu
+#| id: tuyEgLrZrPJu
+#| outputId: 956163b9-5af2-4916-9ec5-a4b36127c430
+@show A[11] == A[1,2];
+```
+
+```{python}
+#| id: vlqWVzyMrPJv
+#| id: vlqWVzyMrPJv
+#| outputId: ca85bcbc-01ea-44c3-fd5a-03768485727a
+b = rand(10); #created a random vector of size 10
+x = A\b; #x is the solutions to the linear system Ax=b
+@show norm(A*x-b)
+;
+```
+
+A few things that are noteworthy: 
+- `A` is a `Matrix` type, and `b` is a `Vector` type.
+- The transpose function creates a matrix of type `Adjoint`.
+- `\` is always the recommended way to solve a linear system. You almost never want to call the `inv` function
+
+```{python}
+#| id: nmCGJtvErPJx
+#| id: nmCGJtvErPJx
+#| outputId: c2a32137-c952-4428-8939-51545cde651f
+@show typeof(A)
+@show typeof(b)
+@show typeof(rand(1,10))
+@show typeof(Atranspose)
+;
+```
+
+```{python}
+#| id: uCIDBKHfrPJx
+#| id: uCIDBKHfrPJx
+#| outputId: 55bd9c75-4353-4256-c311-58df0d411f46
+Matrix{Float64} == Array{Float64,2}
+```
+
+```{python}
+#| id: n_iRzkCnrPJx
+#| id: n_iRzkCnrPJx
+#| outputId: c4396dcc-15e0-4a13-d979-a36cf6b9dd8c
+Vector{Float64} == Array{Float64,1}
+```
+
+```{python}
+#| id: Dq9Nvcr-rPJy
+#| id: Dq9Nvcr-rPJy
+#| outputId: afff030d-e92d-4831-985e-e7cf6cf57db3
+Atranspose
+```
+
+`adjoint` in julia is a lazy adjoint -- often, we can easily perform Linear Algebra operations such as `A*A'` without actually transposing the matrix.
+
+```{python}
+#| id: FR9Lq4jqrPJy
+#| id: FR9Lq4jqrPJy
+#| outputId: 8e0c59a4-c6ef-45e6-ff81-f4613b56aa45
+?adjoint
+```
+
+```{python}
+#| id: t16fNGT4rPJz
+#| id: t16fNGT4rPJz
+#| outputId: f8c301b7-6387-4806-bd15-155584cf26ee
+Atranspose.parent
+```
+
+```{python}
+#| id: y7TDJgCZrPJz
+#| id: y7TDJgCZrPJz
+#| outputId: e5059c72-bf56-4489-d373-1021e47d8431
+sizeof(A)
+```
+
+That's because it's an array of Float64's, each is of size 8 bytes, and there are 10*10 numbers.
+
+```{python}
+#| id: ngGzS-wbrPJ0
+#| id: ngGzS-wbrPJ0
+#| outputId: 513dfe77-9f6b-47c9-b83d-2b3935b5ceeb
+# To actually copy the matrix:
+B = copy(Atranspose)
+```
+
+```{python}
+#| id: ICLBZJyzrPJ0
+#| id: ICLBZJyzrPJ0
+#| outputId: 8feac173-7327-4e2b-f7df-2d4490ab02d3
+sizeof(B)
+```
+
+The `\` operator allows you to solve a system of linear equations, and often uses a suitable matrix factorization to solve the problem. We will cover factorizations next.
+
+```{python}
+#| id: jbGXBEZ6rPJ0
+#| id: jbGXBEZ6rPJ0
+#| outputId: 488ae05f-0410-476d-bae3-9317132c89aa
+?\
+```
+
+### 🟢Factorizations
+A common tool used in Linear Algebra is matrix factorizations. These factorizations are often used to solve linear systems like `Ax=b`, and as we will see later in this tutorial... `Ax=b` comes up in a lot of Data Science problems
+
+#### LU factorization
+L\*U = P\*A
+
+```{python}
+#| id: D25qailrrPJ1
+#| id: D25qailrrPJ1
+#| outputId: 3c77f48f-a229-4abe-eb1f-249e3d57e172
+luA = lu(A)
+```
+
+```{python}
+#| id: y8lXJRw3rPJ1
+#| id: y8lXJRw3rPJ1
+#| outputId: dbc8e7fd-ec40-4b63-b88f-88bad17a104b
+norm(luA.L*luA.U - luA.P*A)
+```
+
+#### QR factorization
+Q\*R = A
+
+```{python}
+#| id: S2wTovBErPJ2
+#| id: S2wTovBErPJ2
+#| outputId: 0dfa52db-21a2-4a4d-b713-0489b9abcee9
+qrA = qr(A)
+```
+
+```{python}
+#| id: fqz4Fj4PrPJ2
+#| id: fqz4Fj4PrPJ2
+#| outputId: 6afaf5d1-78c8-4ab1-a8fa-3433950d3785
+norm(qrA.Q*qrA.R - A)
+```
+
+#### Cholesky factorization, note that A needs to be symmetric positive definite
+L\*L' = A 
+
+```{python}
+#| id: 10G9BL7trPJ2
+#| id: 10G9BL7trPJ2
+#| outputId: e878d7dc-5505-488c-d3f6-a9cf44e46f4f
+isposdef(A)
+```
+
+```{python}
+#| id: AO0vJwPZrPJ2
+#| id: AO0vJwPZrPJ2
+#| outputId: ebb21e97-20e6-4e67-f2e7-baa81c1827f1
+cholA = cholesky(A)
+```
+
+```{python}
+#| id: mGqKjvfnrPJ2
+#| id: mGqKjvfnrPJ2
+#| outputId: cf358dcd-0bc4-4759-c194-ddb4b958b0d3
+norm(cholA.L*cholA.U - A)
+```
+
+```{python}
+#| id: gHqEgaUfrPJ3
+#| id: gHqEgaUfrPJ3
+#| outputId: bd7b9a98-d535-49ed-ef09-3213e85cd72c
+cholA.L
+```
+
+```{python}
+#| id: QctGbNTCrPJ3
+#| id: QctGbNTCrPJ3
+#| outputId: 1a26a2af-983a-4cd7-ee8f-fbd198169c0b
+cholA.U
+```
+
+```{python}
+#| id: dfMjHb1jrPJ3
+#| id: dfMjHb1jrPJ3
+#| outputId: a3e9683d-f3b2-4810-ba99-9324fd413ce8
+factorize(A)
+```
+
+```{python}
+#| id: ZVz8Gu3hrPJ3
+#| id: ZVz8Gu3hrPJ3
+#| outputId: e9f11825-446f-4ac3-d6dc-c10b3e3320b3
+?factorize
+```
+
+```{python}
+#| id: oRpP3AESrPJ3
+#| id: oRpP3AESrPJ3
+#| outputId: bf5d4740-6f3e-4416-8586-b7ec951a7f33
+?diagm
+```
+
+```{python}
+#| id: ToYoTozRrPJ3
+#| id: ToYoTozRrPJ3
+#| outputId: e3c0beb0-dde3-4dea-d7d0-2e69097f0cc0
+# convert(Diagonal{Int64,Array{Int64,1}},diagm([1,2,3]))
+Diagonal([1,2,3])
+```
+
+`I` is a function
+
+```{python}
+#| id: TEwfVnD7rPJ4
+#| id: TEwfVnD7rPJ4
+#| outputId: 2308ac65-9d78-4bcd-9fee-74903346f57d
+I(3)
+```
+
+### 🟢Sparse Linear Algebra
+Sparse matrices are stored in Compressed Sparse Column (CSC) form
+
+```{python}
+#| id: IufCAQSZrPJ4
+#| id: IufCAQSZrPJ4
+#| outputId: 86c2d01e-2e8a-46a9-9247-59fbea73f24d
+using SparseArrays
+S = sprand(5,5,2/5)
+```
+
+```{python}
+#| id: 9YzP3LMQrPJ4
+#| id: 9YzP3LMQrPJ4
+#| outputId: 01adf35e-e5cb-41ec-9dc6-6b6223dd1815
+S.rowval
+```
+
+```{python}
+#| id: dOA4hvakrPJ4
+#| id: dOA4hvakrPJ4
+#| outputId: 4c4d0e20-4e86-4a0c-8fd9-190cfaf9bdee
+Matrix(S)
+```
+
+```{python}
+#| id: JD21RfOLrPJ4
+#| id: JD21RfOLrPJ4
+#| outputId: 57f0d931-0220-455b-ab7a-7be8dd03c184
+S.colptr
+```
+
+```{python}
+#| id: wviPgWTArPJ5
+#| id: wviPgWTArPJ5
+#| outputId: 2b00b5ce-0e2b-4aca-e520-f89d3f9c6513
+S.m
+```
+
+### 🟢Images as matrices
+Let's get to the more "data science-y" side. We will do so by working with images (which can be viewed as matrices), and we will use the `SVD` decomposition.
+
+First let's load an image. I chose this image as it has a lot of details.
+
+```{python}
+#| id: 9fGqUjmarPJ5
+#| id: 9fGqUjmarPJ5
+#| outputId: 63d538d9-408c-4aec-bbea-311eecb471df
+X1 = load("data/khiam-small.jpg")
+```
+
+```{python}
+#| id: p0H4ZZPXrPJ5
+#| id: p0H4ZZPXrPJ5
+#| outputId: 391ab3ab-013a-40b8-f397-acbc0c992532
+@show typeof(X1)
+X1[1,1] # this is pixel [1,1]
+```
+
+We can easily convert this image to gray scale.
+
+```{python}
+#| id: VrOVYYB6rPJ5
+#| id: VrOVYYB6rPJ5
+#| outputId: 34d4c7c0-3ff0-4589-9cad-71f45d6233b9
+Xgray = Gray.(X1)
+```
+
+We can easily extract the RGB layers from the image. We will make use of the `reshape` function below to reshape a vector to a matrix.
+
+```{python}
+#| id: 49tUEiTwrPJ5
+#| id: 49tUEiTwrPJ5
+R = map(i->X1[i].r,1:length(X1))
+R = Float64.(reshape(R,size(X1)...))
+
+G = map(i->X1[i].g,1:length(X1))
+G = Float64.(reshape(G,size(X1)...))
+
+B = map(i->X1[i].b,1:length(X1))
+B = Float64.(reshape(B,size(X1)...))
+;
+```
+
+```{python}
+#| id: o5bhOQ74rPJ6
+#| id: o5bhOQ74rPJ6
+#| outputId: bbc49691-7828-4b16-92f6-9ab688b5a003
+Z = zeros(size(R)...) # just a matrix of all zeros of equal size as the image
+RGB.(Z,G,Z)
+```
+
+We can easily obtain the `Float64` values of the grayscale image.
+
+```{python}
+#| id: zSr-X_u_rPJ6
+#| id: zSr-X_u_rPJ6
+#| outputId: ac180b52-f464-4fdf-b5c9-130bc858a9b8
+Xgrayvalues = Float64.(Xgray)
+```
+
+Next, we will downsample this image using the SVD. First, let's obtain the SVD decomposition.
+
+```{python}
+#| id: iZ-Q9I44rPJ6
+#| id: iZ-Q9I44rPJ6
+#| outputId: 5c535af4-65ba-47d8-95a8-73fe4032e03a
+SVD_V = svd(Xgrayvalues)
+```
+
+```{python}
+#| id: MNjb_vwarPJ6
+#| id: MNjb_vwarPJ6
+#| outputId: 3e6ed311-ec33-4253-96a6-6d14473068b7
+norm(SVD_V.U*diagm(SVD_V.S)*SVD_V.V' - Xgrayvalues)
+```
+
+```{python}
+#| id: aLV55sEmrPJ7
+#| id: aLV55sEmrPJ7
+#| outputId: 0d23b4e5-c812-4eab-c9bf-3343c7c09559
+# use the top 4 singular vectors/values to form a new image
+u1 = SVD_V.U[:,1]
+v1 = SVD_V.V[:,1]
+img1 = SVD_V.S[1]*u1*v1'
+
+i = 2
+u1 = SVD_V.U[:,i]
+v1 = SVD_V.V[:,i]
+img1 += SVD_V.S[i]*u1*v1'
+
+i = 3
+u1 = SVD_V.U[:,i]
+v1 = SVD_V.V[:,i]
+img1 += SVD_V.S[i]*u1*v1'
+
+i = 4
+u1 = SVD_V.U[:,i]
+v1 = SVD_V.V[:,i]
+img1 += SVD_V.S[i]*u1*v1'
+```
+
+```{python}
+#| id: '-HKmWlcTrPJ7'
+#| id: '-HKmWlcTrPJ7'
+#| outputId: d360a140-2d73-457f-faca-2c7e10a6429d
+Gray.(img1)
+```
+
+As you can see, it's still far away from the original image. Let's try using 100 singular vectors/values.
+
+```{python}
+#| id: 4w69t_v_rPJ7
+#| id: 4w69t_v_rPJ7
+#| outputId: 7152fd4a-741e-4a69-90ac-47b322248f89
+i = 1:100
+u1 = SVD_V.U[:,i]
+v1 = SVD_V.V[:,i]
+img1 = u1*spdiagm(0=>SVD_V.S[i])*v1'
+Gray.(img1)
+```
+
+This looks almost identical to the original image, even though it's not identical to the original image (and we can see that from the norm difference).
+
+```{python}
+#| id: 0-D6TRHWrPJ8
+#| id: 0-D6TRHWrPJ8
+#| outputId: 00914d70-ef5e-4402-8965-d20bf6d98c14
+norm(Xgrayvalues-img1)
+```
+
+Our next problem will still be related to images, but this time we will solve a simple form of the face recognition problem. Let's get the data first.
+
+```{python}
+#| id: tW66Nt__rPJ8
+#| id: tW66Nt__rPJ8
+#| outputId: 32159db9-b034-473e-9c0a-e33da401acef
+M = matread("data/face_recog_qr.mat")
+```
+
+```{python}
+#| id: jY-8F6U9rPJ8
+#| id: jY-8F6U9rPJ8
+#| outputId: 2823c2ce-9bb9-4ba5-9fbb-001c669ba0f3
+M
+```
+
+Each vector in `M["V"]` is a fase image. Let's reshape the first one and take a look.
+
+```{python}
+#| id: 5Xn6axrIrPJ8
+#| id: 5Xn6axrIrPJ8
+#| outputId: 461f9594-2aa4-4dc4-cf17-de88489aed6d
+q = reshape(M["V2"][:,1],192,168)
+Gray.(q)
+```
+
+Now we will go back to the vectorized version of this image, and try to select the images that are most similar to it from the "dictionary" matrix. Let's use `b = q[:]` to be the query image. Note that the notation `[:]` vectorizes a matrix column wise.
+
+```{python}
+#| id: OE9f8pYXrPJ9
+#| id: OE9f8pYXrPJ9
+#| outputId: cf66d6d7-6ca5-4229-d9c4-a688f42e2536
+b = q[:]
+```
+
+We will remove the first image from the dictionary. The goal is to find the solution of the linear system `Ax=b` where `A` is the dictionary of all images. In face recognition problem we really want to minimize the norm differece `norm(Ax-b)` but the `\` actually solves a least squares problem when the matrix at hand is not invertible.
+
+```{python}
+#| id: qci3QWXdrPJ9
+#| id: qci3QWXdrPJ9
+#| outputId: 7aaeeeb6-6670-4f47-b176-66eb7d02a3f3
+A = M["V2"][:,2:end]
+x = A\b #Ax=b
+Gray.(reshape(A*x,192,168))
+```
+
+```{python}
+#| id: aKjA0rh-rPJ9
+#| id: aKjA0rh-rPJ9
+#| outputId: 5c3e27c9-3fb8-496c-c415-24a6c2a838c8
+norm(A*x-b)
+```
+
+This was an easy problem. Let's try to make the picture harder to recover. We will add some random error.
+
+```{python}
+#| id: nxU9J9yjrPJ9
+#| id: nxU9J9yjrPJ9
+#| outputId: eeeabe2b-6d1b-4fc8-d05d-3ad83db4097c
+qv = q+rand(size(q,1),size(q,2))*0.5
+qv = qv./maximum(qv)
+Gray.(qv)
+```
+
+```{python}
+#| id: DUBIV7EGrPJ-
+#| id: DUBIV7EGrPJ-
+b = qv[:];
+```
+
+```{python}
+#| id: RbW4Ny3VrPJ-
+#| id: RbW4Ny3VrPJ-
+#| outputId: de7732dc-de22-4de7-bb1b-a950239ed4df
+x = A\b
+norm(A*x-b)
+```
+
+The error is so much bigger this time.
+
+```{python}
+#| id: OUWc7mYJrPJ-
+#| id: OUWc7mYJrPJ-
+#| outputId: f49455be-2baf-4119-8f58-9f08b08ab9c2
+Gray.(reshape(A*x,192,168))
+```
+
+# Finally...
+After finishing this notebook, you should be able to:
+- [ ] reshape and vectorize a matrix
+- [ ] apply basic linear algebra operations such as transpose, matrix-matrix product, and solve a linear systerm
+- [ ] call a linear algebra factorization on your matrix
+- [ ] use SVD to created a compressed version of an image
+- [ ] solve the face recognition problem via a least square approach
+- [ ] create a sparse matrix, and call the components of the Compressed Sparse Column storage
+- [ ] list a few types of matrices Julia uses (diagonal, upper triangular,...)
+- [ ] (unrelated to linear algebra): load an image, convert it to grayscale, and extract the RGB layers
+
+# 🥳 One cool finding
+
+We can solve a simple form of the face recognition problem even when a face image has been distorted with wrong pixels. Example, one of our inputs was this image: <img src="data/0201.png" width="100">
+
+And we were able to detect this face to be closest to the input image: <img src="data/0202.png" width="100">
+
+```{python}
+#| id: e7s1OpqDrPJ-
+#| id: e7s1OpqDrPJ-
+
+```
+
