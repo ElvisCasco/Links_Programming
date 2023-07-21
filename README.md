@@ -16,6 +16,8 @@
 
 - [Probability Theory](https://betanalpha.github.io/assets/case_studies/probability_theory.html)
 
+- [MATTEO COURTHOUD](https://matteocourthoud.github.io/course/)
+
 ## Python
 
 - [Coding for Economists](https://aeturrell.github.io/coding-for-economists/data-intro.html)
@@ -26,7 +28,11 @@
 
 - [Python Data Science Handbook](https://jakevdp.github.io/PythonDataScienceHandbook/)
 
+- [Python for Data Analysis, 3E](https://wesmckinney.com/book/)
+
 ## Julia
+
+- [Bayesian Statistics using Julia and Turing](https://storopoli.io/Bayesian-Julia/)
 
 - [Computational Economics for PhDs](https://floswald.github.io/NumericalMethods/)
 
@@ -48,6 +54,8 @@
 
 - [Julia Programming for Operations Research](https://www.softcover.io/read/7b8eb7d0/juliabook)
 
+- [JuliaTutorial](https://www.tutorialkart.com/julia/#gsc.tab=0)
+
 - [Programaci&#243;n en Julia](https://mauriciotejada.com/programacionjulia/)
 
 - [Think Julia](https://benlauwens.github.io/ThinkJulia.jl/latest/book.html)
@@ -61,17 +69,23 @@
 
 - [Curso de Introducci&#243;n a R](https://www.uv.es/vcoll/curso_r.html)
 
+- [Econoalgoritmia: Econometría avanzada y ciencia de datos con R](https://econoalgoritmia.jeshuanomics.com/)
+
 - [Introducci&#243;n a estad&#237;stica con R](https://bookdown.org/matiasandina/R-intro/)
 
 - [Introducción a la Ciencia de Datos](https://rafalab.github.io/dslibro/)
 
 - [R para profesionales de los datos](https://www.datanalytics.com/libro_r/index.html)
 
+- [R para ciencia de datos](http://es.r4ds.hadley.nz/)
+
 - [RStudio para Estad&#237;stica Descriptiva en Ciencias Sociales](https://bookdown.org/gboccardo/manual-ED-UCH/)
 
 ## R Ingl&#233;s
 
 - [A Language, not a Letter: Learning Statistics in R](https://ademos.people.uic.edu/index.html)
+
+- [A Very Short Course on Time Series Analysis](https://bookdown.org/rdpeng/timeseriesbook/)
 
 - [Advanced R](http://adv-r.had.co.nz/)
 
@@ -86,6 +100,10 @@
 - [Answering questions with data](https://crumplab.github.io/statistics/)
 
 - [Applied Time Series Analysis](https://newonlinecourses.science.psu.edu/stat510/)
+
+- [Best Coding Practices for R](https://bookdown.org/content/d1e53ac9-28ce-472f-bc2c-f499f18264a3/)
+
+- [Big Book of R](https://www.bigbookofr.com/)
 
 - [Biomedical Data Science](http://genomicsclass.github.io/book/)
 
@@ -109,6 +127,8 @@
 
 - [Engineering Production-Grade Shiny Apps](https://engineering-shiny.org)
 
+- [Exploring, Visualizing, and Modeling Big Data with R](https://okanbulut.github.io/bigdata/)
+
 - [Fisheries Catch Forecasting](https://fish-forecast.github.io/Fish-Forecast-Bookdown/index.html)
 
 - [Forecasting: Principles and Practices](https://otexts.org/fpp2/)
@@ -131,6 +151,8 @@
 
 - [Hands-On Programming with R](https://rstudio-education.github.io/hopr/)
 
+- [Hands-On Programming with R_Quarto](https://jjallaire.github.io/hopr/)
+
 - [Happy Git and GitHub for the useR](https://happygitwithr.com)
 
 - [Interactive web-based data visualization with R, plotly, and shiny](https://plotly-r.com/)
@@ -149,9 +171,13 @@
 
 - [Introduction to R](https://methodenlehre.github.io/SGSCLM-R-course/index.html)
 
+- [Introduction to R for Natural Resource Scientists](https://bstaton1.github.io/au-r-workshop/)
+
 - [Just Enough R](https://benwhalley.github.io/just-enough-r/)
 
 - [Learning Statistics with R](https://learningstatisticswithr.com/)
+
+- [Linear Models](https://lbelzile.github.io/lineaRmodels/)
 
 - [Mastering Apache Spark with R](https://therinspark.com/)
 
@@ -183,9 +209,13 @@
 
 - [r-econometrics](https://www.r-econometrics.com/)
 
+- [R for applied epidemiology and public health](https://epirhandbook.com/en/index.html)
+
 - [R for Data Science](https://r4ds.had.co.nz/)
 
 - [R for Data Science: Exercise Solutions](https://jrnold.github.io/r4ds-exercise-solutions/)
+
+- [R for Economic Research](https://book.rleripio.com/)
 
 - [R Graphics Cookbook](http://users.metu.edu.tr/ozancan/R%20Graphics%20Cookbook.pdf)
 
@@ -196,6 +226,8 @@
 - [R packages](http://r-pkgs.had.co.nz/)
 
 - [R Programming for Research](https://geanders.github.io/RProgrammingForResearch/)
+
+- [R Programming: Zero to Pro](https://r02pro.github.io/)
 
 - [R Studio Primers](https://rstudio.cloud/learn/primers)
 
@@ -312,4 +344,3 @@
 - [Ten Quick Tips for Running a Less Painful Meeting](https://github.com/gvwilson/10-meeting/blob/master/README.md)
 
 - [Macroeconomics: Theory Through Applications](https://saylordotorg.github.io/text_macroeconomics-theory-through-applications/index.html)
-
