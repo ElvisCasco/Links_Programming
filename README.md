@@ -54,6 +54,8 @@
 
 - [Julia Programming for Operations Research](https://www.softcover.io/read/7b8eb7d0/juliabook)
 
+- [JuliaNotes](https://m3g.github.io/JuliaNotes.jl/stable/)
+
 - [JuliaTutorial](https://www.tutorialkart.com/julia/#gsc.tab=0)
 
 - [Programaci&#243;n en Julia](https://mauriciotejada.com/programacionjulia/)
